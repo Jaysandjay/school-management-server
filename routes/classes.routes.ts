@@ -1,0 +1,114 @@
+import {Router, Request, Response} from "express"
+import { ClassesRepository } from "../repositories/types/classes.base.repository"
+
+export function createClassRouter(repository: ClassesRepository){
+    const router = Router()
+
+    //Get Class
+    router.get("/:id", async (req: Request, res: Response) => {
+        try{
+            const classId = parseInt(req.params.id)
+            const course = await repository.getClass(classId)
+            console.log("Classes:", course)
+            return res.status(200).json(course)
+            
+        }catch(err){
+            console.error("Error getting class", err)
+            return res.status(500).json({ error: "Error getting class" })
+        }
+    }) 
+
+    //Get Students Classes
+    router.get("/student/:id", async (req : Request, res: Response)=> {
+        try{
+            const studentId = parseInt(req.params.id)
+            const classes = await repository.getStudentsClasses(studentId)
+            console.log("Classes:", classes)
+            return res.status(200).json(classes)
+            
+        }catch(err){
+            console.error("Error getting classes ", err)
+            return res.status(500).json({ error: "Error getting classes" })
+        }
+    })
+
+    //Get Teachers Classes
+    router.get("/teacher/:id", async (req : Request, res: Response)=> {
+        try{
+            const teacherId = parseInt(req.params.id)
+            const classes = await repository.getTeachersClasses(teacherId)
+            console.log("Classes:", classes)
+            return res.status(200).json(classes)
+            
+        }catch(err){
+            console.error("Error getting classes", err)
+            return res.status(500).json({ error: "Error getting classes" })
+        }
+    })
+
+    //Create Class
+    router.post("/", async(req: Request, res: Response) => {
+        try{
+            console.log("Create Class With:", req.body)
+            const className = req.body.className
+            if(!className){
+               return res.status(400).json({error: "Missing Class Name"})
+            }
+            await repository.addClass(className)
+            return res.status(200).json({message: `Class ${className} created`})
+            
+        }catch(err){
+            console.error("Error creating class", err)
+            return res.status(500).json({ error: "Error creating class" })
+        }
+    })
+
+    //Delete Class
+    router.delete('/:id', async (req: Request, res: Response) => {
+        try{
+            const classId = parseInt(req.params.id)
+            await repository.deleteClass(classId)
+            return res.status(200).json({message: `Class with ID ${classId} deleted`})
+            
+        }catch(err){
+            console.error("Error deleting class", err)
+            return res.status(500).json({ error: "Error deleting class" })
+        }
+    })
+
+    //Assign Teacher
+    router.put("/:id", async (req: Request, res: Response) => {
+        try{
+            const classId = parseInt(req.params.id)
+            const teacherId = parseInt(req.body.teacher_id)
+            if(!classId || !teacherId){
+                return res.status(400).json({error: "Missing fields"})
+            }
+            if (isNaN(teacherId)) {
+                return res.status(400).json({ error: "Invalid student ID" })
+            }
+    
+            await repository.assignTeacherToClass(classId, teacherId)
+            return res.status(200).json({message: `Teacher ${teacherId} assigned to class ${classId}`})
+            
+        }catch(err){
+            console.error("Error assigning teacher", err)
+            return res.status(500).json({ error: "Error assigning teacher" })
+        }
+    })
+
+    //Get Enrollments
+    router.get("/enrollment/:id", async (req: Request, res: Response) => {
+        try{
+            const classId = parseInt(req.params.id)
+            const students = await repository.getClassEnrollments(classId)
+            return res.status(200).json(students)
+            
+        }catch(err){
+            console.error("Error getting enrollments", err)
+            return res.status(500).json({ error: "Error getting enrollments" })
+        }
+    })
+
+    return router
+}
