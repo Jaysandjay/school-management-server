@@ -5,6 +5,20 @@ import { Pool } from "pg";
 const pool = new Pool({connectionString: 'postgresql://admin:admin123@localhost:5432/school_db'})
 
 export class SchoolGuardiansRepository implements GuardiansRepository {
+    async getGuardians(): Promise<Guardian[]> {
+        const client = await pool.connect()
+        try{
+            const res = await client.query('SELECT * FROM guardians')
+            console.log(res.rows)
+            return res.rows
+        }catch(err){
+            console.error("Error fetching guardians", err)
+            throw err
+        }finally{
+            client.release()
+        }
+    }
+
     async getGuardian(guardianId: number): Promise<Guardian> {
         const client = await pool.connect()
         try{

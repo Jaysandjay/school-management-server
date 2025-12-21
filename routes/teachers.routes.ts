@@ -4,12 +4,22 @@ import { TeachersRepository } from "../repositories/types/teachers.base.reposito
 export function createTeacherRouter(repository: TeachersRepository){
     const router = Router()
 
-    //Get Teacher
+    //Get Teachers
+    router.get("/", async (req: Request, res: Response) => {
+        try{
+            const teachers = await repository.getTeachers()
+            return res.status(200).json(teachers)
+        }catch(err){
+            console.error("Error fetching teachers", err)
+            return res.status(500).json({error: "Error fetching teachers"})
+        }
+    })
+
+    //Get Teacher by ID
     router.get("/:id", async (req: Request, res: Response) => {
         try{
             const id = parseInt(req.params.id)
             const teacher = await repository.getTeacher(id)
-            console.log("Teacher: ", teacher)
             return res.status(200).json(teacher)
             
         }catch(err){
@@ -28,7 +38,6 @@ export function createTeacherRouter(repository: TeachersRepository){
                 return res.status(400).json({error: "Missing Teacher Required Fields"})
             }
             await repository.addTeacher(teacher)
-            console.log("New teacher added", teacher)
             res.status(200).json(teacher)
             
         }catch(err){
@@ -48,7 +57,6 @@ export function createTeacherRouter(repository: TeachersRepository){
                 teacher_id: teacherId,
                 ...updatedTeacherInfo
             }
-            console.log('Updated Teacher', teacher)
             res.status(200).json(teacher)  
             
         }catch(err){
@@ -62,7 +70,6 @@ export function createTeacherRouter(repository: TeachersRepository){
         try{
             const teacherId = parseInt(req.params.id)
             await repository.deleteTeacher(teacherId)
-            console.log(`Teacher ${teacherId} deleted`)
             res.status(200).json({message: `Teacher ${teacherId} deleted`})
             
         }catch(err){

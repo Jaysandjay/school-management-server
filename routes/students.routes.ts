@@ -4,12 +4,21 @@ import { StudentRepository } from "../repositories/types/students.base.repositor
 export function createStudentRouter(reposirory: StudentRepository){
     const router = Router()
 
-    //Get Student
+    //Get Students
+    router.get("/", async (req: Request, res: Response) => {
+        try{
+            const students = await reposirory.getStudents()
+            return res.status(200).json(students)
+        }catch(err){
+            console.error("Failed to fetch students", err)
+            return res.status(500).json({error: "Failed to fetch students"})
+        }
+    })
+    //Get Student by ID
     router.get('/:id', async (req: Request, res: Response) => {
         try{
             const studentId = parseInt(req.params.id)
             const student = await reposirory.getStudent(studentId)
-            console.log("Student:", student)
             return res.status(200).json(student)
             
         }catch(err){

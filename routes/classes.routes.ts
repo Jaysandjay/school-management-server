@@ -4,7 +4,18 @@ import { ClassesRepository } from "../repositories/types/classes.base.repository
 export function createClassRouter(repository: ClassesRepository){
     const router = Router()
 
-    //Get Class
+    //Get Teachers
+     router.get("/", async (req: Request, res: Response) => {
+        try{
+            const classes = await repository.getClasses()
+            return res.status(200).json(classes)
+        }catch(err){
+            console.error("Error fetching classes", err)
+            return res.status(500).json({error: "Error fetching classes"})
+        }
+    })
+
+    //Get Class by ID
     router.get("/:id", async (req: Request, res: Response) => {
         try{
             const classId = parseInt(req.params.id)

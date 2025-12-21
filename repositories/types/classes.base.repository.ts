@@ -1,6 +1,7 @@
 import type { Course } from "../../types/Course"
 import { Student } from "../../types/Student"
 export interface ClassesRepository {
+    getClasses(): Promise<Course[]>,
     getClass(classId: number): Promise<Course>,
     getStudentsClasses(studentId: number): Promise<Course[]>,
     getTeachersClasses(teacherId: number): Promise<Course[]>,
