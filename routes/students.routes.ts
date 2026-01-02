@@ -1,13 +1,15 @@
 import {Router, Request, Response} from "express"
 import { StudentRepository } from "../repositories/types/students.base.repository"
+import { Student } from "../types/Student"
+import { Address } from "../types/Address"
 
-export function createStudentRouter(reposirory: StudentRepository){
+export function createStudentRouter(repository: StudentRepository){
     const router = Router()
 
     //Get Students
     router.get("/", async (req: Request, res: Response) => {
         try{
-            const students = await reposirory.getStudents()
+            const students = await repository.getStudents()
             return res.status(200).json(students)
         }catch(err){
             console.error("Failed to fetch students", err)
@@ -18,7 +20,7 @@ export function createStudentRouter(reposirory: StudentRepository){
     router.get('/:id', async (req: Request, res: Response) => {
         try{
             const studentId = parseInt(req.params.id)
-            const student = await reposirory.getStudent(studentId)
+            const student = await repository.getStudent(studentId)
             return res.status(200).json(student)
             
         }catch(err){
@@ -39,8 +41,8 @@ export function createStudentRouter(reposirory: StudentRepository){
             if (isNaN(gradeLevel)) {
                 return res.status(400).json({ error: "Invalid grade type" })
             }
-            const student = {firstName, lastName, dateOfBirth, gradeLevel}
-            await reposirory.addStudent(student)
+            const student: Student = {firstName, lastName, dateOfBirth, gradeLevel}
+            await repository.addStudent(student)
             return res.status(200).json(student)
             
         }catch(err){
@@ -53,7 +55,7 @@ export function createStudentRouter(reposirory: StudentRepository){
     router.delete("/:id", async (req: Request, res: Response) => {
         try{
             const studentId = parseInt(req.params.id)
-            await reposirory.deleteStudent(studentId)
+            await repository.deleteStudent(studentId)
             return res.status(200).json({message: `Student ${studentId} deleted`})
             
         }catch(err){
@@ -63,23 +65,112 @@ export function createStudentRouter(reposirory: StudentRepository){
     })
 
     //Assign Student Guardian
-    router.put("/:id", async (req: Request, res: Response) => {
+    router.put("/:id/guardian", async (req: Request, res: Response) => {
         try{
-            const student_id = parseInt(req.params.id)
-            const guardianId = parseInt(req.body.guardianId)
+            const validRelationships = ["Mother", "Father", "Legal Guardian", "Other"]
+            const studentId = parseInt(req.params.id)
+            let {guardianId, relationship} = req.body
             if(!guardianId){
-                console.error("Cannot update student guardian, guardian ID missing")
-                return res.status(400).json({error: `Cannot update student ${student_id}, missing guardian ID`})
+                console.error("Cannot assign student guardian, guardian ID missing")
+                return res.status(400).json({error: `Cannot assign student ${studentId}, missing guardian ID`})
             }
+            guardianId = parseInt(guardianId)
             if (isNaN(guardianId)) {
                 return res.status(400).json({ error: "Invalid student ID" })
             }
-            await reposirory.assignStudentGuardian(student_id, guardianId)
-            return res.status(200).json({message: `Guardian ${guardianId} assigned to student ${student_id}`})
+            if(!relationship) {
+                console.error("Cannot assign student Guardian, missing relationship input")
+                return res.status(400).json({ error: "Missing relationship input" })
+            }
+            if(!validRelationships.includes(relationship)){
+                console.error("Cannot assign student guardian, invalid relationship")
+                return res.status(400).json({ error: "Invalid relationship" })
+            }
+            await repository.assignStudentGuardian(studentId, guardianId, relationship)
+            return res.status(200).json({message: `Guardian ${guardianId} assigned to student ${studentId} with relationship ${relationship}`})
             
         }catch(err){
             console.error("Error assigning guardian", err)
             return res.status(500).json({ error: "Error assigning guardian" })
+        }
+    })
+
+    //Remove Student Guardian
+    router.delete("/:id/guardian", async (req: Request, res: Response) => {
+        try{
+            const studentId = parseInt(req.params.id)
+            const guardianId = parseInt(req.body.guardianId)
+
+            if(!guardianId){
+                console.error("Cannot delete srudent Guardian, guardian id missing")
+                return res.status(400).json({error: "Guardian ID missing"})
+            }
+            await repository.deleteStudentGuardian(studentId, guardianId)
+            return res.status(200).json({message: `Guardian ${guardianId} removed from student ${studentId}`})
+      }catch (err){
+        console.error("Error removing student guardian", err)
+        return res.status(500).json({error: "Error removing guardian from student"})
+      }
+    })
+
+    //Get Student Guardians
+    router.get("/:id/guardian", async (req: Request, res: Response) => {
+        try {
+            const studentId = parseInt(req.params.id)
+            const guardians = await repository.getStudentGuardians(studentId)
+            return res.status(200).json(guardians)
+        }catch(err){
+            console.error("Error getting student's guardians", err)
+            return res.status(500).json({error: "Error getting student's guardians"})
+        }
+    })
+
+    //Get Student Address
+    router.get("/:id/address", async (req: Request, res: Response) => {
+        try{
+            const studentId = parseInt(req.params.id)
+            const address = await repository.getStudentAddress(studentId)
+            return res.status(200).json(address)
+        }catch(err){
+            console.error(`Failed to update address`, err)
+            return res.status(500).json({error: "Error updating address"})
+        }
+    })
+
+    //Add Student Address
+    router.post("/:id/address", async (req: Request, res: Response) => {
+        try {
+            const studentId = parseInt(req.params.id)
+            await repository.addStudentAddress(studentId, req.body)
+            return res.status(200).json({message: `Address Added`})
+        }catch(err){
+            console.error("Error creating address", err)
+            return res.status(500).json({error: "Error ceating address"})
+        }
+    })
+
+    //Update Student
+    router.put("/:id", async (req: Request, res: Response) => {
+        try{
+            const studentId = parseInt(req.params.id)
+            const updatedStudent = req.body
+            await repository.updateStudent(studentId, updatedStudent)
+            return res.status(200).json(updatedStudent)
+        }catch(err){
+            console.error("Error updating student", err)
+            return res.status(500).json({error: "Error updating student"})
+        }
+    })
+
+    //Update Student Address
+    router.put("/:id/address", async (req: Request, res: Response) => {
+        try{
+            const studentId = parseInt(req.params.id)
+            await repository.updateStudentAddress(studentId, req.body)
+            return res.status(200).json({message: "Address Updated"})
+        }catch(err){
+            console.error(`Failed to get address`, err)
+            return res.status(500).json({error: "Error getting address"})
         }
     })
 

@@ -1,5 +1,6 @@
 import {Router, Request, Response} from "express"
 import { ClassesRepository } from "../repositories/types/classes.base.repository"
+import { Course } from "../types/Course"
 
 export function createClassRouter(repository: ClassesRepository){
     const router = Router()
@@ -61,12 +62,27 @@ export function createClassRouter(repository: ClassesRepository){
     router.post("/", async(req: Request, res: Response) => {
         try{
             console.log("Create Class With:", req.body)
-            const className = req.body.className
-            if(!className){
+            let {className, gradeLevel, capacity} = req.body
+            if(!className || !gradeLevel){
                return res.status(400).json({error: "Missing Class Name"})
             }
-            await repository.addClass(className)
-            return res.status(200).json({message: `Class ${className} created`})
+            gradeLevel = parseInt(gradeLevel)
+            if (isNaN(gradeLevel)) {
+                return res.status(400).json({ error: "Invalid grade type" })
+            }
+            if (isNaN(gradeLevel) || gradeLevel < 9 ||gradeLevel > 12) {
+                console.error('Invalid grade level')
+                return res.status(400).json({ error: "Invalid grade level" })
+            }
+            capacity = parseInt(capacity)
+            if (isNaN(capacity) || capacity < 0 ) {
+                console.log('Invalid capacity')
+                return res.status(400).json({ error: "Invalid capacity" })
+            }
+            console.log("Validation passed")
+            const course: Course = {className, gradeLevel, capacity}
+            await repository.addClass(course)
+            return res.status(200).json({course})
             
         }catch(err){
             console.error("Error creating class", err)

@@ -4,5 +4,4 @@ export interface Student {
     lastName: string,
     dateOfBirth: string,
     gradeLevel: number,
-    guardianId?: number
 }

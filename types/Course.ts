@@ -1,6 +1,10 @@
 
 export interface Course {
-    class_id?: number,
+    classId?: number,
     className: string,
+    gradeLevel: number,
+    numStudents?: number,
+    capacity?: number,
+    isFull?: boolean,
     teacherId?: number
 }

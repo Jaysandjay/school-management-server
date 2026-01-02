@@ -24,6 +24,7 @@ import { createAttendanceRouter } from "./routes/attendance.routes";
 import {SchoolAttendanceRepository} from "./repositories/SchoolAttendanceRepository"
 import { createEnrollmentRouter } from "./routes/enrollments.routes";
 import { SchoolEnrollmentsRepository } from "./repositories/SchoolEnrollmentsRepository";
+import { convertToCamelCase } from "./middleware/camelCaseResponse";
 
 
 async function main(
@@ -43,6 +44,7 @@ async function main(
     app.use(express.urlencoded({extended: true}))
     app.use(cors())
     app.use(logger)
+    app.use(convertToCamelCase)
 
     //Routes
     app.use("/api/classes", createClassRouter(classRepository))

@@ -1,3 +1,6 @@
+import { Address } from "../types/Address";
+import { Guardian } from "../types/Guardian";
+import { GuardianRelationship } from "../types/GuardianRelationship";
 import type { Student } from "../types/Student";
 import { StudentRepository } from "./types/students.base.repository";
 import { Pool } from "pg";
@@ -55,6 +58,20 @@ export class SchoolStudentsRepository implements StudentRepository {
         }
     }
 
+    async updateStudent(studentId: number, studentInfo: Student): Promise<void> {
+        const client = await pool.connect()
+        try {
+            const res = await client.query(`UPDATE students SET first_name=$1, last_name=$2, date_of_birth=$3, grade_level=$4 WHERE student_id=$5`,
+                [studentInfo.firstName, studentInfo.lastName, studentInfo.dateOfBirth, studentInfo.gradeLevel, studentId]
+            )
+        }catch(err){
+            console.error("Error updating student", err)
+            throw err
+        }finally {
+            client.release()
+        }
+    }
+
     async deleteStudent(studentId: number): Promise<void> {
         const client = await pool.connect()
         try{
@@ -73,15 +90,12 @@ export class SchoolStudentsRepository implements StudentRepository {
         }
     }
 
-    async assignStudentGuardian(studentId: number, guardianId: number): Promise<void> {
+    async assignStudentGuardian(studentId: number, guardianId: number, relationship: GuardianRelationship): Promise<void> {
         const client = await pool.connect()
         try {
-            const res = await client.query('UPDATE students SET guardian_id = $1 WHERE student_id = $2',
-                [guardianId, studentId]
+            const res = await client.query('INSERT INTO student_guardians(student_id, guardian_id, relationship) VALUES($1, $2, $3)',
+                [studentId, guardianId, relationship]
             )
-            if(res.rowCount === 0){
-                 throw new Error(`Error assigining guardian to student. Student ${studentId} does not exist`)
-            }
             console.log(`Guardian ${guardianId} assigned to student ${studentId}`)
 
         }catch(err){
@@ -90,6 +104,125 @@ export class SchoolStudentsRepository implements StudentRepository {
         }finally{
             client.release()
         }
+    }
 
+    async deleteStudentGuardian(studentId: number, guardianId: number): Promise<void> {
+        const client = await pool.connect()
+        try {
+            const res = await client.query(`DELETE FROM student_guardians WHERE student_id=$1 AND guardian_id=$2`,
+                [studentId, guardianId]
+            )
+            console.log(`Guardian ${guardianId} removed from student ${studentId}`)
+        }catch (err){
+            console.error(`Error removing guardian ${guardianId} from student ${studentId}`, err)
+            throw err
+        }finally {
+            client.release()
+        }
+    }
+
+    async getStudentGuardians(studentId: number): Promise<Guardian[]> {
+        const client = await pool.connect();
+        try {
+            const res = await client.query(
+                `
+                SELECT *
+                FROM student_guardian_view
+                WHERE student_id = $1
+                `,
+                [studentId]
+            );
+            console.log("Guardians", res.rows)
+
+            if(res.rows.length === 0){
+                return []
+            }
+            return res.rows; 
+        } catch (err) {
+            console.error(`Error getting guardians for student ${studentId}`, err);
+            throw err;
+        } finally {
+            client.release();
+        }
+    }
+
+    async getStudentAddress(studentId: number): Promise<Address> {
+        const client = await pool.connect()
+        try {
+            const res = await client.query('SELECT a.street, a.city, a.province, a.postal_code FROM addresses a JOIN students s USING(address_id) WHERE s.student_id=$1',
+                [studentId]
+            )
+            console.log(res.rows[0])
+            if (res.rows.length === 0) {
+                return null
+            }
+            return res.rows[0]
+        }catch(err){
+            console.error(`Error getting address for student ${studentId}`, err)
+            throw err
+        }finally{
+            client.release()
+        }
+    }
+
+    async addStudentAddress(studentId: number, address: Address): Promise<void> {
+        const client = await pool.connect()
+        try {
+            await client.query(`BEGIN`)
+            const res = await client.query(
+                `
+                INSERT INTO addresses (street, city, province, postal_code)
+                values($1, $2, $3, $4)
+                RETURNING address_id
+                `,
+                [address.street, address.city, address.province, address.postalCode]
+            )
+            const newAddressId = res.rows[0].address_id
+
+            await client.query(
+                `
+                UPDATE students
+                SET address_id=$1
+                WHERE student_id=$2
+                `,
+                [newAddressId, studentId]
+            )
+            await client.query(`COMMIT`)
+        }catch(err){
+            await client.query(`ROLLBACK`)
+            console.error("Error adding student address", err)
+            throw err        
+        }finally {
+            client.release()
+        }
+    }
+
+    async updateStudentAddress(studentId: number, address: Address): Promise<void> {
+        const client = await pool.connect()
+        try {
+            const res = await client.query(
+                `
+                UPDATE addresses a 
+                SET 
+                    street=$1,
+                    city=$2,
+                    province=$3,
+                    postal_code=$4
+                FROM students s
+                WHERE s.address_id = a.address_id
+                    AND student_id = $5
+                `,
+                [address.street, address.city, address.province, address.postalCode, studentId]
+            )
+        } catch(err) {
+            console.error("Error updating student address", err)
+            throw err
+        } finally {
+            client.release()
+        }
+    }
+
+    async deleteStudentAddress(studentId: number): Promise<void> {
+        
     }
 }

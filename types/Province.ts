@@ -1,0 +1,1 @@
+export type Province = "AB" | "BC" | "NB" | "NL" | "NS" | "ON" | "PE" | "QC" | "SK"

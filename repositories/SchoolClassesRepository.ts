@@ -43,23 +43,43 @@ export class SchoolClassesRepository implements ClassesRepository {
 
     async getStudentsClasses(studentId: number): Promise<Course[]> {
         const client = await pool.connect()
-        return [
-            {className: "test"}
-        ]  
+        try {
+            const res = await client.query(
+                // TBD
+                'SELECT 1'
+            )
+            return res.rows[0]
+        }catch(err){
+            console.error(`Error getting classes`, err)
+            throw err
+        }finally{
+            client.release()
+        }
     }
 
         async getTeachersClasses(teacherId: number): Promise<Course[]> {
         const client = await pool.connect()
-        return [
-            {className: "test"}
-        ]  
+        try {
+            const res = await client.query(
+                // TBD
+                'SELECT 1'
+            )
+            return res.rows[0]
+        }catch(err){
+            console.error(`Error getting classes`, err)
+            throw err
+        }finally{
+            client.release()
+        }
     }
 
-    async addClass(className: string): Promise<void> {
+    async addClass(course: Course): Promise<void> {
         const client = await pool.connect()
+        console.log(course)
+        console.log(course.className, course.gradeLevel, course.capacity)
         try{
-            const res = await client.query(`INSERT INTO classes(class_name) VALUES($1)`,
-                [className]
+            const res = await client.query(`INSERT INTO classes(class_name, grade_level, capacity) VALUES($1, $2, $3)`,
+                [course.className, course.gradeLevel, course.capacity]
             )
         }catch(err){
             console.error(`Error creating class`, err)
