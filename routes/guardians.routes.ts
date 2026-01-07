@@ -100,12 +100,12 @@ export function createGuardianRouter(repository: GuardiansRepository){
     //Get Guardian address
     router.get("/:id/address", async (req: Request, res: Response) => {
         try{
-            const studentId = parseInt(req.params.id)
-            const address = await repository.getGuardianAddress(studentId)
+            const guardinId = parseInt(req.params.id)
+            const address = await repository.getGuardianAddress(guardinId)
             return res.status(200).json(address)
         }catch(err){
-            console.error(`Failed to update address`, err)
-            return res.status(500).json({error: "Error updating address"})
+            console.error(`Failed to get address`, err)
+            return res.status(500).json({error: "Error get address"})
         }
     })
 

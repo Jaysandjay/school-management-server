@@ -79,5 +79,41 @@ export function createTeacherRouter(repository: TeachersRepository){
 
     })
 
+    //Get teacher address
+    router.get("/:id/address", async (req: Request, res: Response) => {
+        try{
+            const teacherId = parseInt(req.params.id)
+            const address = await repository.getTeacherAddress(teacherId)
+            return res.status(200).json(address)
+        }catch(err){
+            console.error(`Failed to update address`, err)
+            return res.status(500).json({error: "Error updating address"})
+        }
+    })
+
+    //Add Teacher Address
+    router.post("/:id/address", async (req: Request, res: Response) => {
+        try {
+            const teacherId = parseInt(req.params.id)
+            await repository.addTeacherAddress(teacherId, req.body)
+            return res.status(200).json({message: `Address Added`})
+        }catch(err){
+            console.error("Error creating address", err)
+            return res.status(500).json({error: "Error ceating address"})
+        }
+    })
+
+    //Update Teacher Address
+    router.put("/:id/address", async (req: Request, res: Response) => {
+        try{
+            const teacherId = parseInt(req.params.id)
+            await repository.updateTeacherAddress(teacherId, req.body)
+            return res.status(200).json({message: "Address Updated"})
+        }catch(err){
+            console.error(`Failed to update address`, err)
+            return res.status(500).json({error: "Error update address"})
+        }
+    })
+
     return router
 }

@@ -63,6 +63,19 @@ export function createClassRouter(repository: ClassesRepository){
         }
     })
 
+    //Update Class
+    router.put("/:id", async (req: Request, res: Response) => {
+        try{
+            const classId = parseInt(req.params.id)
+            const updatedClass = req.body
+            await repository.updateClass(classId, updatedClass)
+            return res.status(200).json(updatedClass)
+        }catch(err){
+            console.error("Error updating class", err)
+            return res.status(500).json({error: "Error updating class"})
+        }
+    })
+
     //Delete Class
     router.delete('/:id', async (req: Request, res: Response) => {
         try{

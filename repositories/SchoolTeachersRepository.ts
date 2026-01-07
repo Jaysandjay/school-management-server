@@ -1,3 +1,4 @@
+import { Address } from "../types/Address";
 import type  { Teacher } from "../types/Teacher";
 import { TeachersRepository } from "./types/teachers.base.repository";
 import { Pool } from "pg";
@@ -92,4 +93,89 @@ export class SchoolTeachersRepository implements TeachersRepository {
             client.release()
         }
     }
+    
+    async getTeacherAddress(teacherId: number): Promise<Address> {
+            const client = await pool.connect()
+            try {
+                const res = await client.query(
+                    `
+                    SELECT 
+                        a.street, 
+                        a.city, 
+                        a.province, 
+                        a.postal_code 
+                    FROM addresses a JOIN teachers t USING(address_id) WHERE t.teacher_id=$1
+                    `,
+                    [teacherId]
+                )
+                console.log("Teacher address", res.rows[0])
+                if (res.rows.length === 0) {
+                    return null
+                }
+                return res.rows[0]
+            }catch(err){
+                console.error(`Error getting address for teacher ${teacherId}`, err)
+                throw err
+            }finally{
+                client.release()
+            }
+        }
+        
+    async addTeacherAddress(teacherId: number, address: Address): Promise<void> {
+            const client = await pool.connect()
+            try {
+                await client.query(`BEGIN`)
+                const res = await client.query(
+                    `
+                    INSERT INTO addresses (street, city, province, postal_code)
+                    values($1, $2, $3, $4)
+                    RETURNING address_id
+                    `,
+                    [address.street, address.city, address.province, address.postalCode]
+                )
+                const newAddressId = res.rows[0].address_id
+    
+                await client.query(
+                    `
+                    UPDATE teachers
+                    SET address_id=$1
+                    WHERE teacher_id=$2
+                    `,
+                    [newAddressId, teacherId]
+                )
+                await client.query(`COMMIT`)
+            }catch(err){
+                await client.query(`ROLLBACK`)
+                console.error("Error adding teacher address", err)
+                throw err        
+            }finally {
+                client.release()
+            }
+        }
+
+        async updateTeacherAddress(teacherId: number, address: Address): Promise<void> {
+                const client = await pool.connect()
+                try {
+                    const res = await client.query(
+                        `
+                        UPDATE addresses a 
+                        SET 
+                            street=$1,
+                            city=$2,
+                            province=$3,
+                            postal_code=$4
+                        FROM teachers t
+                        WHERE t.address_id = a.address_id
+                            AND teacher_id = $5
+                        `,
+                        [address.street, address.city, address.province, address.postalCode, teacherId]
+                    )
+                } catch(err) {
+                    console.error("Error updating teacher address", err)
+                    throw err
+                } finally {
+                    client.release()
+                }
+            }
+
 }

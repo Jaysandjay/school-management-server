@@ -62,7 +62,14 @@ export class SchoolStudentsRepository implements StudentRepository {
     async updateStudent(studentId: number, studentInfo: Student): Promise<void> {
         const client = await pool.connect()
         try {
-            const res = await client.query(`UPDATE students SET first_name=$1, last_name=$2, date_of_birth=$3, grade_level=$4 WHERE student_id=$5`,
+            const res = await client.query(`
+                UPDATE students 
+                SET 
+                    first_name=$1, 
+                    last_name=$2, 
+                    date_of_birth=$3, 
+                    grade_level=$4 
+                WHERE student_id=$5`,
                 [studentInfo.firstName, studentInfo.lastName, studentInfo.dateOfBirth, studentInfo.gradeLevel, studentId]
             )
         }catch(err){

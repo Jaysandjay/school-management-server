@@ -59,6 +59,28 @@ export class SchoolClassesRepository implements ClassesRepository {
 
     }
 
+    async updateClass(classId: number, updatedClass: Course): Promise<void> {
+        const client = await pool.connect()
+        try {
+            const res = await client.query(`
+                UPDATE classes
+                SET
+                    class_name=$1,
+                    grade_level=$2,
+                    capacity=$3
+                WHERE 
+                    class_id=$4
+                `,
+            [updatedClass.className, updatedClass.gradeLevel, updatedClass.capacity, classId]
+            )
+        }catch(err){
+            console.error("Error updating class", err)
+            throw err
+        }finally {
+            client.release()
+        }
+    }
+
     async deleteClass(classId: number): Promise<void> {
         const client = await pool.connect()
         try{

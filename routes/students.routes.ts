@@ -50,7 +50,20 @@ export function createStudentRouter(repository: StudentRepository){
             return res.status(500).json({ error: "Error adding student" })
         }
     })
-
+    
+    //Update Student
+    router.put("/:id", async (req: Request, res: Response) => {
+        try{
+            const studentId = parseInt(req.params.id)
+            const updatedStudent = req.body
+            await repository.updateStudent(studentId, updatedStudent)
+            return res.status(200).json(updatedStudent)
+        }catch(err){
+            console.error("Error updating student", err)
+            return res.status(500).json({error: "Error updating student"})
+        }
+    })
+    
     //Delete Student
     router.delete("/:id", async (req: Request, res: Response) => {
         try{
@@ -94,7 +107,7 @@ export function createStudentRouter(repository: StudentRepository){
             return res.status(500).json({ error: "Error assigning guardian" })
         }
     })
-
+    
     //Remove Student Guardian
     router.delete("/:id/guardian", async (req: Request, res: Response) => {
         try{
@@ -161,18 +174,6 @@ export function createStudentRouter(repository: StudentRepository){
         }
     })
 
-    //Update Student
-    router.put("/:id", async (req: Request, res: Response) => {
-        try{
-            const studentId = parseInt(req.params.id)
-            const updatedStudent = req.body
-            await repository.updateStudent(studentId, updatedStudent)
-            return res.status(200).json(updatedStudent)
-        }catch(err){
-            console.error("Error updating student", err)
-            return res.status(500).json({error: "Error updating student"})
-        }
-    })
 
     //Update Student Address
     router.put("/:id/address", async (req: Request, res: Response) => {

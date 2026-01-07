@@ -5,6 +5,7 @@ export interface ClassesRepository {
     getClasses(): Promise<Course[]>,
     getClass(classId: number): Promise<Course>,
     addClass(course: Course) :Promise<void>,
+    updateClass(classId: number, updatedClass: Course): Promise<void>,
     deleteClass(classId: number): Promise<void>,
     assignTeacherToClass(classId: number, teacherId: number): Promise<void>,
     removeTeacherFromClass(classId: number): Promise<void>,
