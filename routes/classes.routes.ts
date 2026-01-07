@@ -30,33 +30,6 @@ export function createClassRouter(repository: ClassesRepository){
         }
     }) 
 
-    //Get Students Classes
-    router.get("/student/:id", async (req : Request, res: Response)=> {
-        try{
-            const studentId = parseInt(req.params.id)
-            const classes = await repository.getStudentsClasses(studentId)
-            console.log("Classes:", classes)
-            return res.status(200).json(classes)
-            
-        }catch(err){
-            console.error("Error getting classes ", err)
-            return res.status(500).json({ error: "Error getting classes" })
-        }
-    })
-
-    //Get Teachers Classes
-    router.get("/teacher/:id", async (req : Request, res: Response)=> {
-        try{
-            const teacherId = parseInt(req.params.id)
-            const classes = await repository.getTeachersClasses(teacherId)
-            console.log("Classes:", classes)
-            return res.status(200).json(classes)
-            
-        }catch(err){
-            console.error("Error getting classes", err)
-            return res.status(500).json({ error: "Error getting classes" })
-        }
-    })
 
     //Create Class
     router.post("/", async(req: Request, res: Response) => {
@@ -104,10 +77,10 @@ export function createClassRouter(repository: ClassesRepository){
     })
 
     //Assign Teacher
-    router.put("/:id", async (req: Request, res: Response) => {
+    router.put("/:id/teacher", async (req: Request, res: Response) => {
         try{
             const classId = parseInt(req.params.id)
-            const teacherId = parseInt(req.body.teacher_id)
+            const teacherId = parseInt(req.body.teacherId)
             if(!classId || !teacherId){
                 return res.status(400).json({error: "Missing fields"})
             }
@@ -124,16 +97,60 @@ export function createClassRouter(repository: ClassesRepository){
         }
     })
 
-    //Get Enrollments
-    router.get("/enrollment/:id", async (req: Request, res: Response) => {
+    //Remove Teacher from Class
+    router.delete("/:id/teacher", async (req: Request, res: Response) => {
+        try {
+            const classId = parseInt(req.params.id)
+
+            if (!classId || isNaN(classId)) {
+                return res.status(400).json({ error: "Invalid class ID" })
+            }
+
+            await repository.removeTeacherFromClass(classId)
+
+            return res.status(200).json({ message: `Teacher removed from class ${classId}` })
+
+        } catch (err) {
+            console.error("Error removing teacher", err)
+            return res.status(500).json({ error: "Error removing teacher" })
+        }
+    })
+
+    //Get Class Teacher
+    router.get("/:id/teacher", async (req: Request, res: Response) => {
         try{
             const classId = parseInt(req.params.id)
-            const students = await repository.getClassEnrollments(classId)
+            const teacher = await repository.getClassTeacher(classId)
+            return res.status(200).json(teacher)
+        } catch(err){
+            console.error("Error getting class teacher", err)
+            return res.status(500).json({error: "Errir getting class teacher"})
+        }
+    })
+
+    //Get Students
+    router.get("/:id/students", async (req: Request, res: Response) => {
+        try{
+            const classId = parseInt(req.params.id)
+            const students = await repository.getClassStudents(classId)
             return res.status(200).json(students)
             
         }catch(err){
             console.error("Error getting enrollments", err)
             return res.status(500).json({ error: "Error getting enrollments" })
+        }
+    })
+
+    //Get available Students
+    router.get("/:id/students/available", async (req: Request, res: Response) => {
+        try{
+            const classId = parseInt(req.params.id)
+            const students = await repository.getClassAvailableStudents(classId)
+            return res.status(200).json(students)
+            
+        }catch(err){
+            console.error("Error getting available students", err)
+            return res.status(500).json({ error: "Error getting available students" })
         }
     })
 

@@ -28,6 +28,7 @@ export function createGuardianRouter(repository: GuardiansRepository){
         }
     })
 
+    
     //Add Guardian
     router.post("/", async (req: Request, res: Response) => {
         try{
@@ -46,6 +47,19 @@ export function createGuardianRouter(repository: GuardiansRepository){
         }
     })
 
+    //Update Guardian
+    router.put("/:id", async (req: Request, res: Response) => {
+        try{
+            const guardianId = parseInt(req.params.id)
+            const updatedGuardian = req.body
+            await repository.updateGuardian(guardianId, updatedGuardian)
+            return res.status(200).json(updatedGuardian)
+        }catch(err){
+            console.error("Error updating guardian", err)
+            return res.status(500).json({error: "Error updating guardian"})
+        }
+    })
+
     //Delete Guardian
     router.delete("/:id", async (req: Request, res: Response) => {
         try{
@@ -59,6 +73,65 @@ export function createGuardianRouter(repository: GuardiansRepository){
         }
     })
 
+    //Get Guardians students
+    router.get("/:id/student", async (req: Request, res: Response) => {
+        try {
+            const guardianId = parseInt(req.params.id)
+            const students = await repository.getGuardianStudents(guardianId)
+            return res.status(200).json(students)
+        }catch(err){
+            console.error("Error getting guardian's students", err)
+            return res.status(500).json({error: "Error getting guardian's students"})
+        }
+    })
+
+    //Get Student Available Guardians
+    router.get("/:id/student/available", async (req: Request, res: Response) => {
+        try {
+            const guardianId = parseInt(req.params.id)
+            const students = await repository.getAvailableGuardianStudents(guardianId)
+            return res.status(200).json(students)
+        }catch(err){
+            console.error("Error getting guardian's available students", err)
+            return res.status(500).json({error: "Error getting guardian's available students"})
+        }
+    })
+
+    //Get Guardian address
+    router.get("/:id/address", async (req: Request, res: Response) => {
+        try{
+            const studentId = parseInt(req.params.id)
+            const address = await repository.getGuardianAddress(studentId)
+            return res.status(200).json(address)
+        }catch(err){
+            console.error(`Failed to update address`, err)
+            return res.status(500).json({error: "Error updating address"})
+        }
+    })
+
+    //Add Guardian Address
+    router.post("/:id/address", async (req: Request, res: Response) => {
+        try {
+            const guardianId = parseInt(req.params.id)
+            await repository.addGuardianAddress(guardianId, req.body)
+            return res.status(200).json({message: `Address Added`})
+        }catch(err){
+            console.error("Error creating address", err)
+            return res.status(500).json({error: "Error ceating address"})
+        }
+    })
+
+    //Update Guardian Address
+    router.put("/:id/address", async (req: Request, res: Response) => {
+        try{
+            const guardianId = parseInt(req.params.id)
+            await repository.updateGuardianAddress(guardianId, req.body)
+            return res.status(200).json({message: "Address Updated"})
+        }catch(err){
+            console.error(`Failed to update address`, err)
+            return res.status(500).json({error: "Error update address"})
+        }
+    })
 
 
     return router

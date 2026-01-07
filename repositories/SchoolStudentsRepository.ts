@@ -1,4 +1,5 @@
 import { Address } from "../types/Address";
+import { Course } from "../types/Course";
 import { Guardian } from "../types/Guardian";
 import { GuardianRelationship } from "../types/GuardianRelationship";
 import type { Student } from "../types/Student";
@@ -146,13 +147,46 @@ export class SchoolStudentsRepository implements StudentRepository {
         }
     }
 
+    async getStudentAvailableGuardians(studentId: number): Promise<Guardian[]> {
+        const client = await pool.connect()
+        try {
+            const guardians = await client.query(`SELECT * FROM guardians`)
+            const assignedGuardians = await client.query(`SELECT guardian_id FROM student_guardians WHERE student_id=$1`,
+                [studentId]
+            )
+            const guardianIds: number[] = assignedGuardians.rows.map(row => row.guardian_id)
+
+            const availableGuardians = guardians.rows.filter((guardian) => {
+                return !guardianIds.includes(guardian.guardian_id)
+            })
+            if(!availableGuardians || availableGuardians.length === 0){
+                return []
+            }
+            console.log(`Student ${studentId} available guardians:`, availableGuardians)
+            return availableGuardians
+        }catch(err) {
+            console.error("Error getting filtered guardians", err)
+            throw err
+        }finally {
+            client.release()
+        }
+    }
+
     async getStudentAddress(studentId: number): Promise<Address> {
         const client = await pool.connect()
         try {
-            const res = await client.query('SELECT a.street, a.city, a.province, a.postal_code FROM addresses a JOIN students s USING(address_id) WHERE s.student_id=$1',
+            const res = await client.query(
+                `
+                SELECT 
+                    a.street, 
+                    a.city, 
+                    a.province, 
+                    a.postal_code 
+                FROM addresses a JOIN students s USING(address_id) WHERE s.student_id=$1
+                `,
                 [studentId]
             )
-            console.log(res.rows[0])
+            console.log("Student address", res.rows[0])
             if (res.rows.length === 0) {
                 return null
             }
@@ -222,7 +256,83 @@ export class SchoolStudentsRepository implements StudentRepository {
         }
     }
 
-    async deleteStudentAddress(studentId: number): Promise<void> {
-        
+
+    async getStudentsClasses(studentId: number): Promise<Course[]> {
+        const client = await pool.connect()
+        try {
+            const enrollments = await client.query(`SELECT class_id FROM enrollments WHERE student_id=$1`,
+                [studentId]
+            )
+            const classIds: number[] = enrollments.rows.map(row => row.class_id)
+
+            const studentClasses = await client.query(`SELECT * from classes WHERE class_id = ANY($1)`,
+                [classIds]
+            )
+            if(!enrollments || enrollments.rows.length === 0){
+                return []
+            }
+            console.log(`Student ${studentId} classes`, studentClasses)
+            return studentClasses.rows
+        }catch(err){
+            console.error("Error getting students classes", err)
+            throw err
+        } finally {
+            client.release()
+        }  
     }
+
+    async getAvailableStudentClasses(studentId: number): Promise<Course[]> {
+        const client = await pool.connect()
+        try {
+            const enrollments = await client.query(`SELECT class_id FROM enrollments WHERE student_id=$1`,
+                [studentId]
+            )
+            const classIds: number[] = enrollments.rows.map(row => row.class_id)
+
+            const availableClasses = await client.query(`SELECT * from classes WHERE class_id <> ALL($1)`,
+                [classIds]
+            )
+            console.log(`Student ${studentId} classes`, availableClasses)
+            return availableClasses.rows
+        }catch(err){
+            console.error("Error getting students classes", err)
+            throw err
+        } finally {
+            client.release()
+        }  
+    }
+
+    async enrollStudent(studentId: number, classId: number): Promise<void> {
+        const client = await pool.connect()
+        try {
+            const res = await client.query(`INSERT INTO enrollments(student_id, class_id) VALUES($1, $2)`,
+                [studentId, classId]
+            )
+            console.log(`Student ${studentId} enrolled in class ${classId}`)
+        }catch (err) {
+            console.error(`Error enrolling student ${studentId} in class ${classId}`, err)
+            throw err
+        }finally {
+            client.release()
+        }
+    }
+
+    async unenrollStudent(studentId: number, classId: number): Promise<void> {
+        const client = await pool.connect()
+        try{
+            const res = await client.query('DELETE FROM enrollments WHERE student_id=$1 AND class_id=$2',
+                [studentId, classId]
+            )
+            if(res.rowCount === 0){
+                throw new Error(`Error unenrolling student, student ${studentId}, class ${classId} is not registered`)
+            }
+            console.log(`Student ${studentId} unenrolled from class ${classId}`)
+        }catch(err){
+            console.error(`Error unenrolling student ${studentId} from class ${classId}`, err)
+            throw err
+        }finally{
+            client.release()
+        }
+    }
+    
 }

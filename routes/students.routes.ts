@@ -102,7 +102,7 @@ export function createStudentRouter(repository: StudentRepository){
             const guardianId = parseInt(req.body.guardianId)
 
             if(!guardianId){
-                console.error("Cannot delete srudent Guardian, guardian id missing")
+                console.error("Cannot delete student Guardian, guardian id missing")
                 return res.status(400).json({error: "Guardian ID missing"})
             }
             await repository.deleteStudentGuardian(studentId, guardianId)
@@ -125,6 +125,18 @@ export function createStudentRouter(repository: StudentRepository){
         }
     })
 
+    //Get Student Available Guardians
+    router.get("/:id/guardian/available", async (req: Request, res: Response) => {
+        try {
+            const studentId = parseInt(req.params.id)
+            const guardians = await repository.getStudentAvailableGuardians(studentId)
+            return res.status(200).json(guardians)
+        }catch(err){
+            console.error("Error getting student's available guardians", err)
+            return res.status(500).json({error: "Error getting student's available guardians"})
+        }
+    })
+
     //Get Student Address
     router.get("/:id/address", async (req: Request, res: Response) => {
         try{
@@ -132,8 +144,8 @@ export function createStudentRouter(repository: StudentRepository){
             const address = await repository.getStudentAddress(studentId)
             return res.status(200).json(address)
         }catch(err){
-            console.error(`Failed to update address`, err)
-            return res.status(500).json({error: "Error updating address"})
+            console.error(`Failed to get student address`, err)
+            return res.status(500).json({error: "Error getting student address"})
         }
     })
 
@@ -169,10 +181,82 @@ export function createStudentRouter(repository: StudentRepository){
             await repository.updateStudentAddress(studentId, req.body)
             return res.status(200).json({message: "Address Updated"})
         }catch(err){
-            console.error(`Failed to get address`, err)
-            return res.status(500).json({error: "Error getting address"})
+            console.error(`Failed to update address`, err)
+            return res.status(500).json({error: "Error update address"})
         }
     })
+
+    //Get students enrolled classes
+    router.get("/:id/classes", async (req : Request, res: Response)=> {
+        try{
+            const studentId = parseInt(req.params.id)
+            const classes = await repository.getStudentsClasses(studentId)
+            console.log("Enrolled Classes:", classes)
+            return res.status(200).json(classes)
+            
+        }catch(err){
+            console.error("Error getting classes ", err)
+            return res.status(500).json({ error: "Error getting classes" })
+        }
+    })
+
+    //Get students available classes
+    router.get("/:id/classes/available", async (req : Request, res: Response)=> {
+        try{
+            const studentId = parseInt(req.params.id)
+            const classes = await repository.getAvailableStudentClasses(studentId)
+            return res.status(200).json(classes)
+            
+        }catch(err){
+            console.error("Error getting classes ", err)
+            return res.status(500).json({ error: "Error getting classes" })
+        }
+    })
+
+    //Enroll student
+    router.post("/:id/enrollment", async (req: Request, res: Response) => {
+        try {
+            const studentId = parseInt(req.params.id)
+            const classId = parseInt(req.body.classId)
+            if(isNaN(classId)){
+                console.error("invalid classId")
+                return res.status(400).json({error: "Invalid class ID"})
+            }
+            if(!classId){
+                console.error("Missing classId")
+                return res.status(400).json({error: "Missing class ID"})
+            }
+            await repository.enrollStudent(studentId, classId)
+            
+            return res.status(200).json({message: `Student ${studentId} enrolled in class ${classId}`})
+        } catch(err){
+            console.error("Error enrolling student", err)
+            return res.status(500).json({error: "Error enrolling student"})
+        }
+    })
+
+    //Unenroll Student
+    router.delete("/:id/enrollment", async (req: Request, res: Response) => {
+        try {
+            const studentId = parseInt(req.params.id)
+            const classId = parseInt(req.body.classId)
+            if(isNaN(classId)){
+                console.error("invalid classId")
+                return res.status(400).json({error: "Invalid class ID"})
+            }
+            if(!classId){
+                console.error("Missing classId")
+                return res.status(400).json({error: "Missing class ID"})
+            }
+            await repository.unenrollStudent(studentId, classId)
+            return res.status(200).json({message: `Student ${studentId} unenrolled in class ${classId}`})
+        } catch(err){
+            console.error("Error unenrolling student", err)
+            return res.status(500).json({error: "Error unenrolling student"})
+        }
+    })
+
+
 
     return router
 }

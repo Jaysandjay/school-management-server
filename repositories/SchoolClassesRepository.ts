@@ -1,5 +1,6 @@
 import type { Course } from "../types/Course";
 import type { Student } from "../types/Student";
+import { Teacher } from "../types/Teacher";
 import { ClassesRepository } from "./types/classes.base.repository";
 import { Pool } from "pg";
 
@@ -39,38 +40,6 @@ export class SchoolClassesRepository implements ClassesRepository {
             client.release()
         }
 
-    }
-
-    async getStudentsClasses(studentId: number): Promise<Course[]> {
-        const client = await pool.connect()
-        try {
-            const res = await client.query(
-                // TBD
-                'SELECT 1'
-            )
-            return res.rows[0]
-        }catch(err){
-            console.error(`Error getting classes`, err)
-            throw err
-        }finally{
-            client.release()
-        }
-    }
-
-        async getTeachersClasses(teacherId: number): Promise<Course[]> {
-        const client = await pool.connect()
-        try {
-            const res = await client.query(
-                // TBD
-                'SELECT 1'
-            )
-            return res.rows[0]
-        }catch(err){
-            console.error(`Error getting classes`, err)
-            throw err
-        }finally{
-            client.release()
-        }
     }
 
     async addClass(course: Course): Promise<void> {
@@ -125,10 +94,57 @@ export class SchoolClassesRepository implements ClassesRepository {
         } finally {
             client.release()
         }
-        
     }
 
-    async getClassEnrollments(classId: number): Promise<Student[]> {
+    async removeTeacherFromClass(classId: number): Promise<void> {
+        const client = await pool.connect()
+        try {
+            const res = await client.query(
+                'UPDATE classes SET teacher_id = NULL WHERE class_id = $1',
+                [classId]
+            )
+
+            if (res.rowCount === 0) {
+                throw new Error(`Error removing teacher to class. Class ${classId} does not exist`)
+            }
+        } catch (err) {
+            console.error(`Error removing teacher from class ${classId}`, err)
+            throw err
+        } finally {
+            client.release()
+        }
+    }
+
+    async getClassTeacher(classId: number): Promise<Teacher> {
+        const client = await pool.connect()
+        try {
+            const res = await client.query(
+                `
+                SELECT 
+                    t.teacher_id,
+                    t.first_name,
+                    t.last_name,
+                    t.email,
+                    t.phone
+                FROM classes c JOIN teachers t ON c.teacher_id = t.teacher_id
+                WHERE class_id=$1
+                `,
+                [classId]
+            )
+            console.log("Teacher:", res.rows)
+            if(res.rows.length === 0){
+                return null
+            }
+            return res.rows[0]
+        }catch (err){
+            console.error("Error getting teacher", err)
+            throw err
+        }finally{
+            client.release()
+        }
+    }
+
+    async getClassStudents(classId: number): Promise<Student[]> {
         const client = await pool.connect()
         try {
         const res = await client.query(
@@ -142,15 +158,45 @@ export class SchoolClassesRepository implements ClassesRepository {
         )
 
         if (res.rowCount === 0) {
-            throw new Error(`No students enrolled in class ${classId}`)
+            return []
         }
 
         return res.rows
-    } catch (err) {
-        console.error(`Error getting enrollments for class ${classId}`, err)
-        throw err
-    } finally {
-        client.release()
+        } catch (err) {
+            console.error(`Error getting students for class ${classId}`, err)
+            throw err
+        } finally {
+            client.release()
+        }
     }
+
+    async getClassAvailableStudents(classId: number): Promise<Student[]> {
+        const client = await pool.connect()
+        try {
+        const students = await client.query(`SELECT * FROM students`)
+        const res = await client.query(
+            `
+            SELECT s.student_id
+            FROM students s
+            JOIN enrollments e ON e.student_id = s.student_id
+            WHERE e.class_id = $1
+            `,
+            [classId]
+        )
+        if (res.rowCount === 0) {
+            return students.rows
+        }
+        const enrolledStudentIds: number[] = res.rows.map(row => row.student_id)
+        const availableStudents = students.rows.filter((student) => {
+                return !enrolledStudentIds.includes(student.student_id)
+            })
+
+        return availableStudents
+        } catch (err) {
+            console.error(`Error getting available students for class ${classId}`, err)
+            throw err
+        } finally {
+            client.release()
+        }
     }
 }
