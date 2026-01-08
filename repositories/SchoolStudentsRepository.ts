@@ -3,6 +3,7 @@ import { Course } from "../types/Course";
 import { Guardian } from "../types/Guardian";
 import { GuardianRelationship } from "../types/GuardianRelationship";
 import type { Student } from "../types/Student";
+import { StudentGrade } from "../types/StudentGrade";
 import { StudentRepository } from "./types/students.base.repository";
 import { Pool } from "pg";
 
@@ -341,5 +342,52 @@ export class SchoolStudentsRepository implements StudentRepository {
             client.release()
         }
     }
+
+    async getStudentGrades(studentId: number): Promise<StudentGrade[]> {
+        const client = await pool.connect()
+        try {
+            const res = await client.query(
+                `
+                SELECT *
+                FROM student_grades_view
+                WHERE student_id=$1    
+                `,
+                [studentId]
+            )
+            if (res.rows.length === 0){
+                return []
+            }
+            return res.rows
+        }catch(err) {
+            console.error("Error getting grades", err)
+            throw err
+        } finally {
+            client.release()
+        }
+    }
+
+    async updateStudentGrade(studentId: number, classId: number, grade: number): Promise<void> {
+        const client = await pool.connect()
+        
+        try {
+            const res = await client.query(
+                `
+                UPDATE enrollments SET grade=$1 WHERE student_id=$2 AND class_id=$3 
+                `,
+                [grade, studentId, classId]
+            )
+            const enrollment = await client.query(`SELECT * FROM enrollments WHERE student_id=$1 AND class_id=$2`,
+                [studentId, classId]
+            )
+            console.log(`Updated grade to ${grade}`)
+            console.log(enrollment.rows)
+        }catch(err) {
+            console.error("Error updating grade", err)
+            throw err
+        } finally {
+            client.release()
+        }
+    }
+    
     
 }

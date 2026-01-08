@@ -5,7 +5,18 @@ import { Course } from "../types/Course"
 export function createClassRouter(repository: ClassesRepository){
     const router = Router()
 
-    //Get Teachers
+      //Get unassigned Classes
+    router.get("/unassigned", async (req: Request, res: Response) => {
+        try{
+            const classes = await repository.getUnassignedClasses()
+            return res.status(200).json(classes)
+        } catch(err){
+            console.error("Error getting unassigned classes", err)
+            return res.status(500).json({error: "Error getting unassigned classes"})
+        }
+    })
+
+    //Get classes
      router.get("/", async (req: Request, res: Response) => {
         try{
             const classes = await repository.getClasses()
@@ -137,7 +148,7 @@ export function createClassRouter(repository: ClassesRepository){
             return res.status(200).json(teacher)
         } catch(err){
             console.error("Error getting class teacher", err)
-            return res.status(500).json({error: "Errir getting class teacher"})
+            return res.status(500).json({error: "Error getting class teacher"})
         }
     })
 
@@ -167,5 +178,22 @@ export function createClassRouter(repository: ClassesRepository){
         }
     })
 
+    //Get student grades
+    router.get("/:id/grades", async (req : Request, res: Response)=> {
+        try{
+            const classId = parseInt(req.params.id)
+            const grades = await repository.getClassGrades(classId)
+            return res.status(200).json(grades)
+            
+        }catch(err){
+            console.error("Error getting grades ", err)
+            return res.status(500).json({ error: "Error getting grades" })
+        }
+    })
+
+    
+
     return router
+
+    
 }

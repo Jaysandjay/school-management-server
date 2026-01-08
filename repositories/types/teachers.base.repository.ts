@@ -1,4 +1,5 @@
 import { Address } from "../../types/Address"
+import { Course } from "../../types/Course"
 import type { Teacher } from "../../types/Teacher"
 
 export interface TeachersRepository {
@@ -10,4 +11,5 @@ export interface TeachersRepository {
     addTeacherAddress(teacherId: number, address: Address): Promise<void>,
     getTeacherAddress(teacherId: number): Promise<Address>,
     updateTeacherAddress(teacherId: number, address: Address): Promise<void>,
+    getTeacherClasses(teacherId: number): Promise<Course[]>,
 }

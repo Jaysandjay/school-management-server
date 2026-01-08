@@ -3,6 +3,7 @@ import { Course } from "../../types/Course";
 import { Guardian } from "../../types/Guardian";
 import { GuardianRelationship } from "../../types/GuardianRelationship";
 import type { Student } from "../../types/Student";
+import { StudentGrade } from "../../types/StudentGrade";
 
 export interface StudentRepository {
     getStudents(): Promise<Student[]>,
@@ -22,4 +23,6 @@ export interface StudentRepository {
     getStudentsClasses(studentId: number): Promise<Course[]>,
     unenrollStudent(studentId: number, classId: number): Promise<void>,
     enrollStudent(studentId: number, classId: number): Promise<void>,
+    getStudentGrades(studentId: number): Promise<StudentGrade[]>,
+    updateStudentGrade(studentId: number, classId: number, grade: number): Promise<void>
 }

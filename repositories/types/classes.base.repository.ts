@@ -1,5 +1,6 @@
 import type { Course } from "../../types/Course"
 import { Student } from "../../types/Student"
+import { StudentGrade } from "../../types/StudentGrade"
 import { Teacher } from "../../types/Teacher"
 export interface ClassesRepository {
     getClasses(): Promise<Course[]>,
@@ -11,5 +12,7 @@ export interface ClassesRepository {
     removeTeacherFromClass(classId: number): Promise<void>,
     getClassTeacher(classId: number): Promise<Teacher>,
     getClassStudents(classId: number): Promise<Student[]>,
-    getClassAvailableStudents(classId: number): Promise<Student[]>
+    getClassAvailableStudents(classId: number): Promise<Student[]>,
+    getUnassignedClasses():Promise<Course[]>,
+    getClassGrades(classId: number): Promise<StudentGrade[]>
 }

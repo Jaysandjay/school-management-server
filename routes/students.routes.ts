@@ -63,7 +63,7 @@ export function createStudentRouter(repository: StudentRepository){
             return res.status(500).json({error: "Error updating student"})
         }
     })
-    
+
     //Delete Student
     router.delete("/:id", async (req: Request, res: Response) => {
         try{
@@ -257,7 +257,44 @@ export function createStudentRouter(repository: StudentRepository){
         }
     })
 
+    //Get student grades
+    router.get("/:id/grades", async (req : Request, res: Response)=> {
+        try{
+            const studentId = parseInt(req.params.id)
+            const grades = await repository.getStudentGrades(studentId)
+            return res.status(200).json(grades)
+            
+        }catch(err){
+            console.error("Error getting grades ", err)
+            return res.status(500).json({ error: "Error getting grades" })
+        }
+    })
 
+
+    //update student grade
+    router.put("/:id/grade", async (req: Request, res: Response) => {
+        console.log("Updating grade ...")
+        try{
+            const studentId = parseInt(req.params.id)
+            const classId = parseInt(req.body.classId)
+            const grade = parseInt(req.body.grade)
+            if(!classId || !grade){
+                console.error("Error, Missing fields")
+                return res.status(400).json({error: "Missing fields"})
+            }
+            if (isNaN(grade) || isNaN(classId)) {
+                console.error("Invalid Types")
+                return res.status(400).json({ error: "Invalid types" })
+            }
+    
+            await repository.updateStudentGrade(studentId, classId, grade)
+            return res.status(200).json({message: `Student ${studentId} grade updated to ${grade} in class ${classId}`})
+            
+        }catch(err){
+            console.error("Error updating grade", err)
+            return res.status(500).json({ error: "Error updating grade" })
+        }
+    })
 
     return router
 }

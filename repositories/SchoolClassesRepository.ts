@@ -1,5 +1,6 @@
 import type { Course } from "../types/Course";
 import type { Student } from "../types/Student";
+import { StudentGrade } from "../types/StudentGrade";
 import { Teacher } from "../types/Teacher";
 import { ClassesRepository } from "./types/classes.base.repository";
 import { Pool } from "pg";
@@ -22,7 +23,7 @@ export class SchoolClassesRepository implements ClassesRepository {
     }
 
     async getClass(classId: number): Promise<Course> {
-        console.log("Get Class")
+       
         const client = await pool.connect()
 
         try {
@@ -221,4 +222,52 @@ export class SchoolClassesRepository implements ClassesRepository {
             client.release()
         }
     }
+
+    
+    async getUnassignedClasses (): Promise<Course[]> {
+        console.log("Get unassigned classes")
+        const client = await pool.connect()
+        try {
+            const res = await client.query(
+                `
+                SELECT *
+                FROM classes
+                WHERE teacher_id IS NULL
+                `
+            )
+            if (res.rows.length === 0){
+                return []
+            }
+            return res.rows
+        } catch(err) {
+            console.error("Error getting unassigned classes", err)
+            throw err
+        } finally {
+            client.release()
+        }
+    }
+
+    async getClassGrades(classId: number): Promise<StudentGrade[]> {
+        const client = await pool.connect()
+        try {
+            const res = await client.query(
+                `
+                SELECT *
+                FROM student_grades_view
+                WHERE class_id=$1    
+                `,
+                [classId]
+            )
+            if (res.rows.length === 0){
+                return []
+            }
+            return res.rows
+        }catch(err) {
+            console.error("Error getting grades", err)
+            throw err
+        } finally {
+            client.release()
+        }
+    }
+
 }

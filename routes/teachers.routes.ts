@@ -79,6 +79,18 @@ export function createTeacherRouter(repository: TeachersRepository){
 
     })
 
+    //Get teacher classes
+     router.get("/:id/classes", async (req: Request, res: Response) => {
+        try{
+            const teacherId = parseInt(req.params.id)
+            const classes = await repository.getTeacherClasses(teacherId)
+            return res.status(200).json(classes)
+        }catch(err){
+            console.error(`Failed to get teachers classes`, err)
+            return res.status(500).json({error: "Error getting teachers classes"})
+        }
+    })
+
     //Get teacher address
     router.get("/:id/address", async (req: Request, res: Response) => {
         try{
@@ -114,6 +126,9 @@ export function createTeacherRouter(repository: TeachersRepository){
             return res.status(500).json({error: "Error update address"})
         }
     })
+
+
+
 
     return router
 }

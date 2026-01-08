@@ -1,4 +1,5 @@
 import { Address } from "../types/Address";
+import { Course } from "../types/Course";
 import type  { Teacher } from "../types/Teacher";
 import { TeachersRepository } from "./types/teachers.base.repository";
 import { Pool } from "pg";
@@ -177,5 +178,30 @@ export class SchoolTeachersRepository implements TeachersRepository {
                     client.release()
                 }
             }
+
+        async getTeacherClasses(teacherId: number): Promise<Course[]> {
+            const client = await pool.connect()
+            try {
+                const res = await client.query(
+                    `
+                    SELECT *
+                    FROM classes
+                    WHERE teacher_id=$1
+                    `,
+                    [teacherId]
+                )
+                if (res.rows.length === 0){
+                    return []
+                }
+                return res.rows
+            } catch(err) {
+                console.error("Error getting teacher classes", err)
+                throw err
+            } finally {
+                client.release()
+            }
+        }
+
+       
 
 }
