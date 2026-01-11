@@ -34,7 +34,7 @@ async function main(
     guardianRepository: GuardiansRepository,
     // classSessionRepository: ClassSessionRepository,
     // attendanceRepository: AttendanceRepository,
-    enrollmentRepository: EnrollmentRepository
+    // enrollmentRepository: EnrollmentRepository
 ){
     console.log("Server is running...")
     const port = 8000
@@ -53,7 +53,7 @@ async function main(
     app.use("/api/guardians", createGuardianRouter(guardianRepository))
     // app.use("/api/sessions", createClassSessionRouter(classSessionRepository))
     // app.use("/api/attendance", createAttendanceRouter(attendanceRepository))
-    app.use("/api/enrollments", createEnrollmentRouter(enrollmentRepository))
+    // app.use("/api/enrollments", createEnrollmentRouter(enrollmentRepository))
 
 
     //Check Connection
@@ -76,13 +76,13 @@ async function main(
     const guardianRepository = new SchoolGuardiansRepository()
     const classSessionRepository = new SchoolClassSessionsRepository()
     // const attendanceRepository = new SchoolAttendanceRepository() 
-    const enrollmentRepository = new SchoolEnrollmentsRepository()
+    // const enrollmentRepository = new SchoolEnrollmentsRepository()
     await main(
         classRepository,
         teacherRepository,
         studentRepository,
         guardianRepository,
         // classSessionRepository,
-        enrollmentRepository
+        // enrollmentRepository
     )
 })()
