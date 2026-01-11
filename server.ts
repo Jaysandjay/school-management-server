@@ -32,8 +32,8 @@ async function main(
     teacherRepository: TeachersRepository,
     studentRepository: StudentRepository,
     guardianRepository: GuardiansRepository,
-    classSessionRepository: ClassSessionRepository,
-    attendanceRepository: AttendanceRepository,
+    // classSessionRepository: ClassSessionRepository,
+    // attendanceRepository: AttendanceRepository,
     enrollmentRepository: EnrollmentRepository
 ){
     console.log("Server is running...")
@@ -51,8 +51,8 @@ async function main(
     app.use("/api/teachers", createTeacherRouter(teacherRepository))
     app.use("/api/students", createStudentRouter(studentRepository))
     app.use("/api/guardians", createGuardianRouter(guardianRepository))
-    app.use("/api/sessions", createClassSessionRouter(classSessionRepository))
-    app.use("/api/attendance", createAttendanceRouter(attendanceRepository))
+    // app.use("/api/sessions", createClassSessionRouter(classSessionRepository))
+    // app.use("/api/attendance", createAttendanceRouter(attendanceRepository))
     app.use("/api/enrollments", createEnrollmentRouter(enrollmentRepository))
 
 
@@ -75,15 +75,14 @@ async function main(
     const studentRepository = new SchoolStudentsRepository()
     const guardianRepository = new SchoolGuardiansRepository()
     const classSessionRepository = new SchoolClassSessionsRepository()
-    const attendanceRepository = new SchoolAttendanceRepository()
+    // const attendanceRepository = new SchoolAttendanceRepository() 
     const enrollmentRepository = new SchoolEnrollmentsRepository()
     await main(
         classRepository,
         teacherRepository,
         studentRepository,
         guardianRepository,
-        classSessionRepository,
-        attendanceRepository,
+        // classSessionRepository,
         enrollmentRepository
     )
 })()
