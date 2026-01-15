@@ -6,8 +6,11 @@ import type { Student } from "../types/Student";
 import { StudentGrade } from "../types/StudentGrade";
 import { StudentRepository } from "./types/students.base.repository";
 import { Pool } from "pg";
+import dotenv from "dotenv";
 
-const pool = new Pool({connectionString: 'postgresql://admin:admin123@localhost:5432/school_db'})
+dotenv.config();
+
+const pool = new Pool({connectionString: process.env.CONNECTION_STRING})
 
 export class SchoolStudentsRepository implements StudentRepository {
     

@@ -4,8 +4,11 @@ import { StudentGrade } from "../types/StudentGrade";
 import { Teacher } from "../types/Teacher";
 import { ClassesRepository } from "./types/classes.base.repository";
 import { Pool } from "pg";
+import dotenv from "dotenv";
 
-const pool = new Pool({connectionString: 'postgresql://admin:admin123@localhost:5432/school_db'})
+dotenv.config();
+
+const pool = new Pool({connectionString: process.env.CONNECTION_STRING})
 
 export class SchoolClassesRepository implements ClassesRepository {
     async getClasses(): Promise<Course[]> {

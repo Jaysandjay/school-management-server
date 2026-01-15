@@ -2,8 +2,11 @@ import type {Attendance} from "../types/Attendance"
 import { AttendanceStatus } from "../types/AttendanceStatus";
 import {AttendanceRepository} from "./types/attendance.base.repository"
 import { Pool } from "pg";
+import dotenv from "dotenv";
 
-const pool = new Pool({connectionString: 'postgresql://admin:admin123@localhost:5432/school_db'})
+dotenv.config();
+
+const pool = new Pool({connectionString: process.env.CONNECTION_STRING})
 
 export class SchoolAttendanceRepository implements AttendanceRepository {
     async getAttendanceBySession(sessionId: number): Promise<Attendance[]> {

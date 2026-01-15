@@ -23,7 +23,7 @@ import { SchoolClassSessionsRepository } from "./repositories/SchoolClassSession
 import { createAttendanceRouter } from "./routes/attendance.routes";
 import {SchoolAttendanceRepository} from "./repositories/SchoolAttendanceRepository"
 import { createEnrollmentRouter } from "./routes/enrollments.routes";
-import { SchoolEnrollmentsRepository } from "./repositories/SchoolEnrollmentsRepository";
+// import { SchoolEnrollmentsRepository } from "./repositories/SchoolEnrollmentsRepository";
 import { convertToCamelCase } from "./middleware/camelCaseResponse";
 
 
@@ -47,13 +47,13 @@ async function main(
     app.use(convertToCamelCase)
 
     //Routes
-    app.use("/api/classes", createClassRouter(classRepository))
-    app.use("/api/teachers", createTeacherRouter(teacherRepository))
-    app.use("/api/students", createStudentRouter(studentRepository))
-    app.use("/api/guardians", createGuardianRouter(guardianRepository))
-    // app.use("/api/sessions", createClassSessionRouter(classSessionRepository))
-    // app.use("/api/attendance", createAttendanceRouter(attendanceRepository))
-    // app.use("/api/enrollments", createEnrollmentRouter(enrollmentRepository))
+    app.use("/classes", createClassRouter(classRepository))
+    app.use("/teachers", createTeacherRouter(teacherRepository))
+    app.use("/students", createStudentRouter(studentRepository))
+    app.use("/guardians", createGuardianRouter(guardianRepository))
+    // app.use("/sessions", createClassSessionRouter(classSessionRepository))
+    // app.use("/attendance", createAttendanceRouter(attendanceRepository))
+    // app.use("/enrollments", createEnrollmentRouter(enrollmentRepository))
 
 
     //Check Connection

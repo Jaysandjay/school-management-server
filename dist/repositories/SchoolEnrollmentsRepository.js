@@ -1,9 +1,7 @@
 // import { EnrollmentRepository } from "./types/enrollment.base.reposirory";
 // import type { Enrollment } from "../types/Enrollment";
 // import { Pool } from "pg";
-
 // const pool = new Pool({connectionString: 'postgresql://admin:admin123@localhost:5432/school_db'})
-
 // export class SchoolEnrollmentsRepository implements EnrollmentRepository {
 //     async enrollStudent(studentId: number, classId: number): Promise<void> {
 //         const client = await pool.connect()
@@ -12,7 +10,6 @@
 //                 [studentId, classId]
 //             )
 //             console.log(`Student ${studentId} enrolled in class ${classId}`)
-
 //         }catch(err){
 //             console.error(`Error enrolling student ${studentId} to class ${classId}`, err)
 //             throw err
@@ -20,14 +17,12 @@
 //             client.release()
 //         }
 //     }
-
 //     async setGrade(enrollment: Enrollment): Promise<void> {
 //         const client = await pool.connect()
 //         try{
 //             const res = await client.query('UPDATE enrollments SET grade=#1 WHERE student_id=$2 AND class_id=$3 RETURNING *',
 //                 [enrollment.grade, enrollment.studentId, enrollment.classId]
 //             )
-
 //             if(res.rowCount === 0){
 //                 throw new Error(`Error setting Grade, student ${enrollment.studentId} or class ${enrollment.classId} is not registered`)
 //             }
@@ -39,7 +34,6 @@
 //             client.release()
 //         }
 //     }
-
 //     async getEnrollmentsByStudent(studentId: number): Promise<Enrollment[]> {
 //         const client = await pool.connect()
 //         try{
@@ -55,7 +49,6 @@
 //             client.release()
 //         }
 //     }
-
 //     async getEnrollmentsByClass(classId: number): Promise<Enrollment[]> {
 //         const client = await pool.connect()
 //         try{
@@ -71,5 +64,4 @@
 //             client.release()
 //         }
 //     }
-
 // }
