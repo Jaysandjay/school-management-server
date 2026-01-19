@@ -5,7 +5,7 @@ import { EnrollmentRepository } from "./repositories/types/enrollment.base.repos
 
 import express from "express";
 import cors from "cors";
-import logger from "./middleware/logger";
+import methodLogger from "./middleware/methodLogger";
 import { createClassRouter } from "./routes/classes.routes";
 import { SchoolClassesRepository } from "./repositories/SchoolClassesRepository";
 import { Pool } from "pg";
@@ -25,6 +25,8 @@ import {SchoolAttendanceRepository} from "./repositories/SchoolAttendanceReposit
 import { createEnrollmentRouter } from "./routes/enrollments.routes";
 // import { SchoolEnrollmentsRepository } from "./repositories/SchoolEnrollmentsRepository";
 import { convertToCamelCase } from "./middleware/camelCaseResponse";
+import winston from "winston/lib/winston/config";
+import logger from "./util/logger";
 
 
 async function main(
@@ -43,7 +45,7 @@ async function main(
     app.use(express.json())
     app.use(express.urlencoded({extended: true}))
     app.use(cors())
-    app.use(logger)
+    app.use(methodLogger)
     app.use(convertToCamelCase)
 
     //Routes
@@ -58,16 +60,16 @@ async function main(
 
     //Check Connection
     try {
-        const pool = new Pool({connectionString: 'postgresql://admin:admin123@localhost:5432/school_db'})
+        const pool = new Pool({connectionString: process.env.CONNECTION_STRING})
         await pool.query("SELECT 1")
-        console.log("Database connected successfully!");
+        logger.info("Database connected successfully!");
   } catch (err) {
-    console.error("Cannot connect to database:", err);
+    logger.error("Cannot connect to database:", err);
     process.exit(1); 
   }
     
 
-    app.listen(port, "0.0.0.0", ()=> console.log(`Server is running on port ${port}`))
+    app.listen(port, "0.0.0.0", ()=> logger.info(`Server is running on port ${port}`))
 }
 (async () => {
     const classRepository = new SchoolClassesRepository()

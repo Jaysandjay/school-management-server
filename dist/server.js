@@ -28,13 +28,13 @@ async function main(classRepository, teacherRepository, studentRepository, guard
     app.use(logger_1.default);
     app.use(camelCaseResponse_1.convertToCamelCase);
     //Routes
-    app.use("/api/classes", (0, classes_routes_1.createClassRouter)(classRepository));
-    app.use("/api/teachers", (0, teachers_routes_1.createTeacherRouter)(teacherRepository));
-    app.use("/api/students", (0, students_routes_1.createStudentRouter)(studentRepository));
-    app.use("/api/guardians", (0, guardians_routes_1.createGuardianRouter)(guardianRepository));
-    // app.use("/api/sessions", createClassSessionRouter(classSessionRepository))
-    // app.use("/api/attendance", createAttendanceRouter(attendanceRepository))
-    // app.use("/api/enrollments", createEnrollmentRouter(enrollmentRepository))
+    app.use("/classes", (0, classes_routes_1.createClassRouter)(classRepository));
+    app.use("/teachers", (0, teachers_routes_1.createTeacherRouter)(teacherRepository));
+    app.use("/students", (0, students_routes_1.createStudentRouter)(studentRepository));
+    app.use("/guardians", (0, guardians_routes_1.createGuardianRouter)(guardianRepository));
+    // app.use("/sessions", createClassSessionRouter(classSessionRepository))
+    // app.use("/attendance", createAttendanceRouter(attendanceRepository))
+    // app.use("/enrollments", createEnrollmentRouter(enrollmentRepository))
     //Check Connection
     try {
         const pool = new pg_1.Pool({ connectionString: 'postgresql://admin:admin123@localhost:5432/school_db' });

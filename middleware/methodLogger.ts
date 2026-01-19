@@ -1,6 +1,7 @@
 import colors from 'colors'
+import logger from '../util/logger'
 
-const logger = (req, res, next) => {
+const methodLogger = (req, res, next) => {
     const methodColors = {
         GET: 'green',
         POST: 'blue',
@@ -9,9 +10,10 @@ const logger = (req, res, next) => {
     }
 
     const color = methodColors[req.method] || 'white'
-    const log =`${req.method} ${req.protocol}://${req.get('host')}${req.originalUrl}`
+    const log =`${req.method} ${req.protocol}://${req.get('host')}${req.originalUrl} Status: ${res.statusCode}`
     console.log(colors[color](log))
+    logger.info(log)
     next()
 }
 
-export default logger
+export default methodLogger

@@ -1,5 +1,7 @@
 import {Router, Response, Request} from "express"
 import { GuardiansRepository } from "../repositories/types/guardians.base.repository"
+import logError from "../util/logError"
+import { error } from "node:console"
 
 export function createGuardianRouter(repository: GuardiansRepository){
     const router = Router()
@@ -10,7 +12,7 @@ export function createGuardianRouter(repository: GuardiansRepository){
             const guardians = await repository.getGuardians()
             return res.status(200).json(guardians)
         }catch(err){
-            console.error("Error fetching guardians", err)
+            logError("Error fetching guardians", err, req)
             return res.status(500).json({error: "Error fetching guardians"})
         }
     })
@@ -19,11 +21,15 @@ export function createGuardianRouter(repository: GuardiansRepository){
     router.get("/:id", async (req: Request, res: Response) => {
         try{
             const guardianId = parseInt(req.params.id)
+            if(!guardianId || isNaN(guardianId)){
+                logError("Invalid guardianId", new Error("Failed to get guardian"), req)
+                res.status(400).json({error: "Invalid guardianId"})
+            }
             const guardian = await repository.getGuardian(guardianId)
             return res.status(200).json(guardian)
             
         }catch(err){
-            console.error("Error getting guardian", err)
+            logError("Error getting guardian", err, req)
             return res.status(500).json({ error: "Error getting guardian" })
         }
     })
@@ -34,7 +40,7 @@ export function createGuardianRouter(repository: GuardiansRepository){
         try{
             const {firstName, lastName, phone, email} = req.body
             if(!firstName || !lastName || !phone || !email){
-                console.error("Cannot add guardian, missing required fields")
+                logError("Missing required fields", new Error("Failed to add guardina"), req)
                 return res.status(400).json({error: "Cannot add guardian, missing required fields"})
             }
             const guardian = {firstName, lastName, phone, email}
@@ -42,7 +48,7 @@ export function createGuardianRouter(repository: GuardiansRepository){
             return res.status(200).json(guardian)
             
         }catch(err){
-            console.error("Error adding guardian", err)
+            logError("Error adding guardian", err, req)
             return res.status(500).json({ error: "Error adding guardian" })
         }
     })
@@ -52,10 +58,18 @@ export function createGuardianRouter(repository: GuardiansRepository){
         try{
             const guardianId = parseInt(req.params.id)
             const updatedGuardian = req.body
+            if(!guardianId || isNaN(guardianId)){
+                logError("Invalid guardianId", new Error("Failed to update guardian"), req)
+                res.status(400).json({error: "Invalid guardianId"})
+            }
+            if(!req.body){
+                logError("Missing guradian details", new Error("Failed to update guardian"), req)
+                res.status(400).json({error: "Missing guardian details"})
+            }
             await repository.updateGuardian(guardianId, updatedGuardian)
             return res.status(200).json(updatedGuardian)
         }catch(err){
-            console.error("Error updating guardian", err)
+            logError("Error updating guardian", err, req)
             return res.status(500).json({error: "Error updating guardian"})
         }
     })
@@ -64,11 +78,15 @@ export function createGuardianRouter(repository: GuardiansRepository){
     router.delete("/:id", async (req: Request, res: Response) => {
         try{
             const guardianId = parseInt(req.params.id)
+            if(!guardianId || isNaN(guardianId)){
+                logError("Invalid guardianId", new Error("Failed to delete guardian"), req)
+                res.status(400).json({error: "Invalid guardianId"})
+            }
             await repository.deleteGuardian(guardianId)
             res.send(200).json({message: `Deleted guardian ${guardianId}`})
             
         }catch(err){
-            console.error("Error deleting guardian", err)
+            logError("Error deleting guardian", err, req)
             return res.status(500).json({ error: "Error deleting guardian" })
         }
     })
@@ -77,11 +95,15 @@ export function createGuardianRouter(repository: GuardiansRepository){
     router.get("/:id/student", async (req: Request, res: Response) => {
         try {
             const guardianId = parseInt(req.params.id)
+            if(!guardianId || isNaN(guardianId)){
+                logError("Invalid guardianId", new Error("Failed to get guardian's assigned students"), req)
+                res.status(400).json({error: "Invalid guardianId"})
+            }
             const students = await repository.getGuardianStudents(guardianId)
             return res.status(200).json(students)
         }catch(err){
-            console.error("Error getting guardian's students", err)
-            return res.status(500).json({error: "Error getting guardian's students"})
+            logError("Error getting guardian's assigned students", err, req)
+            return res.status(500).json({error: "Error getting guardian's assigned students"})
         }
     })
 
@@ -89,23 +111,31 @@ export function createGuardianRouter(repository: GuardiansRepository){
     router.get("/:id/student/available", async (req: Request, res: Response) => {
         try {
             const guardianId = parseInt(req.params.id)
+            if(!guardianId || isNaN(guardianId)){
+                logError("Invalid guardianId", new Error("Failed to get guardian's unassigned students"), req)
+                res.status(400).json({error: "Invalid guardianId"})
+            }
             const students = await repository.getAvailableGuardianStudents(guardianId)
             return res.status(200).json(students)
         }catch(err){
-            console.error("Error getting guardian's available students", err)
-            return res.status(500).json({error: "Error getting guardian's available students"})
+            logError("Error getting guardian's unassigned students", err, req)
+            return res.status(500).json({error: "Error getting guardian's unassigned students"})
         }
     })
 
     //Get Guardian address
     router.get("/:id/address", async (req: Request, res: Response) => {
         try{
-            const guardinId = parseInt(req.params.id)
-            const address = await repository.getGuardianAddress(guardinId)
+            const guardianId = parseInt(req.params.id)
+            if(!guardianId || isNaN(guardianId)){
+                logError("Invalid guardianId", new Error("Failed to get guardian address"), req)
+                res.status(400).json({error: "Invalid guardianId"})
+            }
+            const address = await repository.getGuardianAddress(guardianId)
             return res.status(200).json(address)
         }catch(err){
-            console.error(`Failed to get address`, err)
-            return res.status(500).json({error: "Error get address"})
+            logError(`Failed to get guardian address`, err, req)
+            return res.status(500).json({error: "Error getting address"})
         }
     })
 
@@ -113,10 +143,14 @@ export function createGuardianRouter(repository: GuardiansRepository){
     router.post("/:id/address", async (req: Request, res: Response) => {
         try {
             const guardianId = parseInt(req.params.id)
+            if(!guardianId || isNaN(guardianId)){
+                logError("Invalid guardianId", new Error("Failed to add guardian address"), req)
+                res.status(400).json({error: "Invalid guardianId"})
+            }
             await repository.addGuardianAddress(guardianId, req.body)
             return res.status(200).json({message: `Address Added`})
         }catch(err){
-            console.error("Error creating address", err)
+            logError("Error adding guardian address", err, req)
             return res.status(500).json({error: "Error ceating address"})
         }
     })
@@ -125,10 +159,18 @@ export function createGuardianRouter(repository: GuardiansRepository){
     router.put("/:id/address", async (req: Request, res: Response) => {
         try{
             const guardianId = parseInt(req.params.id)
+            if(!guardianId || isNaN(guardianId)){
+                logError("Invalid guardianId", new Error("Failed to update guardian address"), req)
+                res.status(400).json({error: "Invalid guardianId"})
+            }
+            if(!req.body){
+                logError("Missing address details", new Error("Failed to update guardian address"), req)
+                res.status(400).json({error: "Missing address details"})
+            }
             await repository.updateGuardianAddress(guardianId, req.body)
             return res.status(200).json({message: "Address Updated"})
         }catch(err){
-            console.error(`Failed to update address`, err)
+            logError(`Failed to update address`, err, req)
             return res.status(500).json({error: "Error update address"})
         }
     })

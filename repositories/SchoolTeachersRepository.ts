@@ -4,6 +4,8 @@ import type  { Teacher } from "../types/Teacher";
 import { TeachersRepository } from "./types/teachers.base.repository";
 import { Pool } from "pg";
 import dotenv from "dotenv";
+import logger from "../util/logger";
+import logError from "../util/logError";
 
 dotenv.config();
 
@@ -15,10 +17,14 @@ export class SchoolTeachersRepository implements TeachersRepository {
         const client = await pool.connect()
         try{
             const res = await client.query('SELECT * FROM teachers')
-            console.log(res.rows)
+            logger.debug('DB: Fetch teachers', {
+                rowCount: res.rows.length,
+                query: "getTeachers",
+                rows: res.rows
+            })
             return res.rows
         }catch(err){
-            console.error("Error fetching teachers", err)
+            logError("Error fetching teachers", err)
             throw err
         }finally{
             client.release()
@@ -32,12 +38,18 @@ export class SchoolTeachersRepository implements TeachersRepository {
                 [teacherId]
             )
             if(res.rowCount=== 0){
-                throw new Error("Teacher Does not Exist")
+                let error = new Error("Failed to get teacher")
+                logError("Teacher Does not Exist", error)
+                throw error
             }
-            console.log(res.rows[0])
+            logger.debug('DB: Fetch teacher', {
+                rowCount: res.rows.length,
+                query: "getTeacher",
+                rows: res.rows
+            })
             return res.rows[0]
         }catch(err){
-            console.error("Error getting Teacher", err) 
+            logError("Error getting Teacher", err) 
             throw err
         }finally{
             client.release()
@@ -50,9 +62,13 @@ export class SchoolTeachersRepository implements TeachersRepository {
             const res = await client.query('INSERT INTO teachers(first_name, last_name, email, phone) VALUES($1, $2, $3, $4) RETURNING *',
                 [teacherData.firstName, teacherData.lastName, teacherData.email, teacherData.phone]
             )
-            console.log("Teacher Added:", res.rows[0])
+            logger.debug('DB: Add teacher', {
+                rowCount: res.rows.length,
+                query: "addTeacher",
+                rows: res.rows
+            })
         }catch(err){
-            console.error("Error adding Teacher", err)
+            logError("Error adding Teacher", err)
             throw err
         }finally{
             client.release()
@@ -71,9 +87,13 @@ export class SchoolTeachersRepository implements TeachersRepository {
                     teacherId
                 ]
             )
-            console.log("Teacher updated", res.rows[0])
+            logger.debug('DB: Update teachers', {
+                rowCount: res.rows.length,
+                query: "updateTeacher",
+                rows: res.rows
+            })
         }catch(err){
-            console.error(`Error updating Teacher ${teacherId}` , err)
+            logError(`Error updating Teacher ${teacherId}` , err)
             throw err
         }finally{
             client.release()
@@ -83,15 +103,21 @@ export class SchoolTeachersRepository implements TeachersRepository {
     async deleteTeacher(teacherId: number): Promise<void> {
         const client = await pool.connect()
         try{
-            const res = await client.query('DELETE FROM teachers WHERE teacher_id = $1',
+            const res = await client.query('DELETE FROM teachers WHERE teacher_id = $1 RETURNING *',
                 [teacherId]
             )
             if(res.rowCount === 0){
-                throw new Error(`Error deleting, teacher ${teacherId} does not exist`)
+                let error = new Error("Failed to delete teacher")
+                logError(`Error deleting, teacher ${teacherId} does not exist`, error)
+                throw error
             }
-            console.log(`Deleted teacher ${teacherId}`)
+            logger.debug('DB: Delete teachers', {
+                rowCount: res.rows.length,
+                query: "deleteTeacher",
+                rows: res.rows
+            })
         }catch(err){
-            console.error(`Failed to delete teacher with id: ${teacherId}`, err)
+            logError(`Failed to delete teacher with id: ${teacherId}`, err)
             throw err
         }finally{
             client.release()
@@ -112,13 +138,17 @@ export class SchoolTeachersRepository implements TeachersRepository {
                     `,
                     [teacherId]
                 )
-                console.log("Teacher address", res.rows[0])
+                logger.debug('DB: Get teacher address', {
+                    rowCount: res.rows.length,
+                    query: "getTeacherAddress",
+                    rows: res.rows
+                })
                 if (res.rows.length === 0) {
                     return null
                 }
                 return res.rows[0]
             }catch(err){
-                console.error(`Error getting address for teacher ${teacherId}`, err)
+                logError(`Error getting address for teacher ${teacherId}`, err)
                 throw err
             }finally{
                 client.release()
@@ -139,18 +169,24 @@ export class SchoolTeachersRepository implements TeachersRepository {
                 )
                 const newAddressId = res.rows[0].address_id
     
-                await client.query(
+                const updateRes = await client.query(
                     `
                     UPDATE teachers
                     SET address_id=$1
                     WHERE teacher_id=$2
+                    RETURNING *
                     `,
                     [newAddressId, teacherId]
                 )
+                logger.debug('DB: Add teacher address', {
+                    rowCount: updateRes.rows.length,
+                    query: "addTeacherAddress",
+                    rows: updateRes.rows
+                })
                 await client.query(`COMMIT`)
             }catch(err){
                 await client.query(`ROLLBACK`)
-                console.error("Error adding teacher address", err)
+                logError("Error adding teacher address", err)
                 throw err        
             }finally {
                 client.release()
@@ -171,11 +207,17 @@ export class SchoolTeachersRepository implements TeachersRepository {
                         FROM teachers t
                         WHERE t.address_id = a.address_id
                             AND teacher_id = $5
+                        RETURNING *
                         `,
                         [address.street, address.city, address.province, address.postalCode, teacherId]
                     )
+                    logger.debug('DB: Update teacher address', {
+                        rowCount: res.rows.length,
+                        query: "updateTeacherAddress",
+                        rows: res.rows
+                    })
                 } catch(err) {
-                    console.error("Error updating teacher address", err)
+                    logError("Error updating teacher address", err)
                     throw err
                 } finally {
                     client.release()
@@ -193,12 +235,17 @@ export class SchoolTeachersRepository implements TeachersRepository {
                     `,
                     [teacherId]
                 )
+                logger.debug('DB: Get teacher classes', {
+                    rowCount: res.rows.length,
+                    query: "getTeacherClasses",
+                    rows: res.rows
+                })
                 if (res.rows.length === 0){
                     return []
                 }
                 return res.rows
             } catch(err) {
-                console.error("Error getting teacher classes", err)
+                logError("Error getting teacher classes", err)
                 throw err
             } finally {
                 client.release()

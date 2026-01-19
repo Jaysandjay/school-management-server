@@ -1,7 +1,7 @@
 import {Router, Request, Response} from "express"
 import { StudentRepository } from "../repositories/types/students.base.repository"
 import { Student } from "../types/Student"
-import { Address } from "../types/Address"
+import logError from "../util/logError"
 
 export function createStudentRouter(repository: StudentRepository){
     const router = Router()
@@ -12,7 +12,7 @@ export function createStudentRouter(repository: StudentRepository){
             const students = await repository.getStudents()
             return res.status(200).json(students)
         }catch(err){
-            console.error("Failed to fetch students", err)
+            logError("Failed to fetch students", err, req)
             return res.status(500).json({error: "Failed to fetch students"})
         }
     })
@@ -24,7 +24,7 @@ export function createStudentRouter(repository: StudentRepository){
             return res.status(200).json(student)
             
         }catch(err){
-            console.error("Error getting student", err)
+            logError("Error getting student", err, req)
             return res.status(500).json({ error: "Error getting student" })
         }
     })
@@ -34,11 +34,12 @@ export function createStudentRouter(repository: StudentRepository){
         try{
             let {firstName, lastName, dateOfBirth, gradeLevel} = req.body
             if(!firstName || !lastName || !dateOfBirth || !gradeLevel){
-                console.error("Error adding student, missing required fields")
+                logError("Error adding student, missing required fields", new Error("Failed to add student"), req)
                 return res.status(400).json({error: 'Error creating student, missing required fields'})
             }
             gradeLevel = parseInt(gradeLevel)
             if (isNaN(gradeLevel)) {
+                logError("Error adding student, invalid grade level", new Error("Failed to add student"), req)
                 return res.status(400).json({ error: "Invalid grade type" })
             }
             const student: Student = {firstName, lastName, dateOfBirth, gradeLevel}
@@ -46,7 +47,7 @@ export function createStudentRouter(repository: StudentRepository){
             return res.status(200).json(student)
             
         }catch(err){
-            console.error("Error adding student", err)
+            logError("Error adding student", err, req)
             return res.status(500).json({ error: "Error adding student" })
         }
     })
@@ -59,7 +60,7 @@ export function createStudentRouter(repository: StudentRepository){
             await repository.updateStudent(studentId, updatedStudent)
             return res.status(200).json(updatedStudent)
         }catch(err){
-            console.error("Error updating student", err)
+            logError("Error updating student", err, req)
             return res.status(500).json({error: "Error updating student"})
         }
     })
@@ -72,7 +73,7 @@ export function createStudentRouter(repository: StudentRepository){
             return res.status(200).json({message: `Student ${studentId} deleted`})
             
         }catch(err){
-            console.error("Error deleting student ", err)
+            logError("Error deleting student ", err, req)
             return res.status(500).json({ error: "Error deleting student" })
         }
     })
@@ -84,26 +85,27 @@ export function createStudentRouter(repository: StudentRepository){
             const studentId = parseInt(req.params.id)
             let {guardianId, relationship} = req.body
             if(!guardianId){
-                console.error("Cannot assign student guardian, guardian ID missing")
+                logError("Cannot assign student guardian, guardian ID missing", new Error("Failed to assign guardian"), req)
                 return res.status(400).json({error: `Cannot assign student ${studentId}, missing guardian ID`})
             }
             guardianId = parseInt(guardianId)
             if (isNaN(guardianId)) {
+                logError("Cannot assign student guardian, guardian ID invalid", new Error("Failed to assign guardian"), req)
                 return res.status(400).json({ error: "Invalid student ID" })
             }
             if(!relationship) {
-                console.error("Cannot assign student Guardian, missing relationship input")
+                logError("Cannot assign student Guardian, missing relationship input", new Error("Failed to assign guardian"), req)
                 return res.status(400).json({ error: "Missing relationship input" })
             }
             if(!validRelationships.includes(relationship)){
-                console.error("Cannot assign student guardian, invalid relationship")
+                logError("Cannot assign student Guardian, invalid relationship", new Error("Failed to assign guardian"), req)
                 return res.status(400).json({ error: "Invalid relationship" })
             }
             await repository.assignStudentGuardian(studentId, guardianId, relationship)
             return res.status(200).json({message: `Guardian ${guardianId} assigned to student ${studentId} with relationship ${relationship}`})
             
         }catch(err){
-            console.error("Error assigning guardian", err)
+            logError("Error assigning guardian", err, req)
             return res.status(500).json({ error: "Error assigning guardian" })
         }
     })
@@ -115,13 +117,13 @@ export function createStudentRouter(repository: StudentRepository){
             const guardianId = parseInt(req.body.guardianId)
 
             if(!guardianId){
-                console.error("Cannot delete student Guardian, guardian id missing")
+                logError("Cannot delete student Guardian, guardian id missing", new Error("Failed to remove guardian"), req)
                 return res.status(400).json({error: "Guardian ID missing"})
             }
             await repository.deleteStudentGuardian(studentId, guardianId)
             return res.status(200).json({message: `Guardian ${guardianId} removed from student ${studentId}`})
       }catch (err){
-        console.error("Error removing student guardian", err)
+        logError("Error removing student guardian", err, req)
         return res.status(500).json({error: "Error removing guardian from student"})
       }
     })
@@ -133,7 +135,7 @@ export function createStudentRouter(repository: StudentRepository){
             const guardians = await repository.getStudentGuardians(studentId)
             return res.status(200).json(guardians)
         }catch(err){
-            console.error("Error getting student's guardians", err)
+            logError("Error getting student's guardians", err, req)
             return res.status(500).json({error: "Error getting student's guardians"})
         }
     })
@@ -145,7 +147,7 @@ export function createStudentRouter(repository: StudentRepository){
             const guardians = await repository.getStudentAvailableGuardians(studentId)
             return res.status(200).json(guardians)
         }catch(err){
-            console.error("Error getting student's available guardians", err)
+            logError("Error getting student's available guardians", err, req)
             return res.status(500).json({error: "Error getting student's available guardians"})
         }
     })
@@ -157,7 +159,7 @@ export function createStudentRouter(repository: StudentRepository){
             const address = await repository.getStudentAddress(studentId)
             return res.status(200).json(address)
         }catch(err){
-            console.error(`Failed to get student address`, err)
+            logError(`Failed to get student address`, err, req)
             return res.status(500).json({error: "Error getting student address"})
         }
     })
@@ -169,7 +171,7 @@ export function createStudentRouter(repository: StudentRepository){
             await repository.addStudentAddress(studentId, req.body)
             return res.status(200).json({message: `Address Added`})
         }catch(err){
-            console.error("Error creating address", err)
+            logError("Error creating address", err, req)
             return res.status(500).json({error: "Error ceating address"})
         }
     })
@@ -182,7 +184,7 @@ export function createStudentRouter(repository: StudentRepository){
             await repository.updateStudentAddress(studentId, req.body)
             return res.status(200).json({message: "Address Updated"})
         }catch(err){
-            console.error(`Failed to update address`, err)
+            logError(`Failed to update address`, err, req)
             return res.status(500).json({error: "Error update address"})
         }
     })
@@ -192,11 +194,10 @@ export function createStudentRouter(repository: StudentRepository){
         try{
             const studentId = parseInt(req.params.id)
             const classes = await repository.getStudentsClasses(studentId)
-            console.log("Enrolled Classes:", classes)
             return res.status(200).json(classes)
             
         }catch(err){
-            console.error("Error getting classes ", err)
+            logError("Error getting classes ", err, req)
             return res.status(500).json({ error: "Error getting classes" })
         }
     })
@@ -209,7 +210,7 @@ export function createStudentRouter(repository: StudentRepository){
             return res.status(200).json(classes)
             
         }catch(err){
-            console.error("Error getting classes ", err)
+            logError("Error getting classes ", err, req)
             return res.status(500).json({ error: "Error getting classes" })
         }
     })
@@ -220,18 +221,19 @@ export function createStudentRouter(repository: StudentRepository){
             const studentId = parseInt(req.params.id)
             const classId = parseInt(req.body.classId)
             if(isNaN(classId)){
-                console.error("invalid classId")
+                logError("Failed to enroll student. Invalid classId", new Error("Failed to enroll student"), req)
                 return res.status(400).json({error: "Invalid class ID"})
             }
             if(!classId){
-                console.error("Missing classId")
+                logError("Failed to enroll student. Missing classId", new Error("Failed to enroll student"), req)
                 return res.status(400).json({error: "Missing class ID"})
             }
+
             await repository.enrollStudent(studentId, classId)
             
             return res.status(200).json({message: `Student ${studentId} enrolled in class ${classId}`})
         } catch(err){
-            console.error("Error enrolling student", err)
+            logError("Error enrolling student", err, req)
             return res.status(500).json({error: "Error enrolling student"})
         }
     })
@@ -242,17 +244,17 @@ export function createStudentRouter(repository: StudentRepository){
             const studentId = parseInt(req.params.id)
             const classId = parseInt(req.body.classId)
             if(isNaN(classId)){
-                console.error("invalid classId")
+                logError("Failed to unenroll student. Invalid classId", new Error("Failed to unenroll student"), req)
                 return res.status(400).json({error: "Invalid class ID"})
             }
             if(!classId){
-                console.error("Missing classId")
+                logError("Failed to unenroll student. missing classId", new Error("Failed to unenroll student"), req)
                 return res.status(400).json({error: "Missing class ID"})
             }
             await repository.unenrollStudent(studentId, classId)
             return res.status(200).json({message: `Student ${studentId} unenrolled in class ${classId}`})
         } catch(err){
-            console.error("Error unenrolling student", err)
+            logError("Error unenrolling student", err, req)
             return res.status(500).json({error: "Error unenrolling student"})
         }
     })
@@ -265,7 +267,7 @@ export function createStudentRouter(repository: StudentRepository){
             return res.status(200).json(grades)
             
         }catch(err){
-            console.error("Error getting grades ", err)
+            logError("Error getting grades ", err, req)
             return res.status(500).json({ error: "Error getting grades" })
         }
     })
@@ -273,25 +275,28 @@ export function createStudentRouter(repository: StudentRepository){
 
     //update student grade
     router.put("/:id/grade", async (req: Request, res: Response) => {
-        console.log("Updating grade ...")
         try{
             const studentId = parseInt(req.params.id)
             const classId = parseInt(req.body.classId)
             const grade = parseInt(req.body.grade)
             if(!classId || !grade){
-                console.error("Error, Missing fields")
+                logError("Error updating student. Missing fields", new Error("Failed to update studnet"), req)
                 return res.status(400).json({error: "Missing fields"})
             }
-            if (isNaN(grade) || isNaN(classId)) {
-                console.error("Invalid Types")
-                return res.status(400).json({ error: "Invalid types" })
+            if (isNaN(grade)) {
+                logError("Error updating student. Invalid grade", new Error("Failed to update studnet"), req)
+                return res.status(400).json({ error: "Invalid grade" })
+            }
+            if (isNaN(classId)) {
+                logError("Error updating student. Invalid classId", new Error("Failed to update studnet"), req)
+                return res.status(400).json({ error: "Invalid classID" })
             }
     
             await repository.updateStudentGrade(studentId, classId, grade)
             return res.status(200).json({message: `Student ${studentId} grade updated to ${grade} in class ${classId}`})
             
         }catch(err){
-            console.error("Error updating grade", err)
+            logError("Error updating grade", err, req)
             return res.status(500).json({ error: "Error updating grade" })
         }
     })

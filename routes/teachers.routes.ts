@@ -1,5 +1,6 @@
 import {Router, Request, Response} from "express"
 import { TeachersRepository } from "../repositories/types/teachers.base.repository"
+import logError from "../util/logError"
 
 export function createTeacherRouter(repository: TeachersRepository){
     const router = Router()
@@ -10,7 +11,7 @@ export function createTeacherRouter(repository: TeachersRepository){
             const teachers = await repository.getTeachers()
             return res.status(200).json(teachers)
         }catch(err){
-            console.error("Error fetching teachers", err)
+            logError("Error fetching teachers", err, req)
             return res.status(500).json({error: "Error fetching teachers"})
         }
     })
@@ -18,12 +19,15 @@ export function createTeacherRouter(repository: TeachersRepository){
     //Get Teacher by ID
     router.get("/:id", async (req: Request, res: Response) => {
         try{
-            const id = parseInt(req.params.id)
-            const teacher = await repository.getTeacher(id)
+            const teacherId = parseInt(req.params.id)
+            if(!teacherId || isNaN(teacherId)){
+                logError("Invalid teacherId", new Error("Failed to get Teacher"), req)
+                res.status(400).json({error: "Invalid teacherId"})
+            }
+            const teacher = await repository.getTeacher(teacherId)
             return res.status(200).json(teacher)
-            
         }catch(err){
-            console.error("Error getting teacher", err)
+            logError("Error getting teacher", err, req)
             return res.status(500).json({ error: "Error getting teacher" })
         }
     })
@@ -34,23 +38,30 @@ export function createTeacherRouter(repository: TeachersRepository){
             const {firstName, lastName, email, phone} = req.body
             const teacher = {firstName, lastName, email, phone}
             if(!firstName || ! lastName || !email || !phone){
-                console.error("Cant Create Teacher. Missing Required Fields")
+                logError("Missing Required Fields", new Error("Failed to create teacher"), req)
                 return res.status(400).json({error: "Missing Teacher Required Fields"})
             }
             await repository.addTeacher(teacher)
             res.status(200).json(teacher)
-            
         }catch(err){
-            console.error("Error adding teacher", err)
+            logError("Error adding teacher", err, req)
             return res.status(500).json({ error: "Error adding teacjer" })
         }
     })
-
+    
     //Update Teacher
     router.put("/:id", async (req: Request, res: Response) => {
         try{
             const teacherId = parseInt(req.params.id)
+            if(!teacherId || isNaN(teacherId)){
+                logError("Invalid teacherId", new Error("Failed to update Teacher"), req)
+                res.status(400).json({error: "Invalid teacherId"})
+            }
             const {firstName, lastName, email, phone} = req.body
+            if(!firstName || ! lastName || !email || !phone){
+                logError("Missing Required Fields", new Error("Failed to update teacher"), req)
+                return res.status(400).json({error: "Missing Teacher Required Fields"})
+            }
             const updatedTeacherInfo = {firstName, lastName, email, phone}
             await repository.updateTeacher(teacherId, updatedTeacherInfo)
             const teacher = {
@@ -60,7 +71,7 @@ export function createTeacherRouter(repository: TeachersRepository){
             res.status(200).json(teacher)  
             
         }catch(err){
-            console.error("Error updating teacher", err)
+            logError("Error updating teacher", err, req)
             return res.status(500).json({ error: "Error updating teacher" })
         }
     })
@@ -83,10 +94,14 @@ export function createTeacherRouter(repository: TeachersRepository){
      router.get("/:id/classes", async (req: Request, res: Response) => {
         try{
             const teacherId = parseInt(req.params.id)
+            if(!teacherId || isNaN(teacherId)){
+                logError("Invalid teacherId", new Error("Failed to get Teacher's classes"), req)
+                res.status(400).json({error: "Invalid teacherId"})
+            }
             const classes = await repository.getTeacherClasses(teacherId)
             return res.status(200).json(classes)
         }catch(err){
-            console.error(`Failed to get teachers classes`, err)
+            logError(`Failed to get teachers classes`, err, req)
             return res.status(500).json({error: "Error getting teachers classes"})
         }
     })
@@ -95,10 +110,14 @@ export function createTeacherRouter(repository: TeachersRepository){
     router.get("/:id/address", async (req: Request, res: Response) => {
         try{
             const teacherId = parseInt(req.params.id)
+            if(!teacherId || isNaN(teacherId)){
+                logError("Invalid teacherId", new Error("Failed to get Teacher's address"), req)
+                res.status(400).json({error: "Invalid teacherId"})
+            }
             const address = await repository.getTeacherAddress(teacherId)
             return res.status(200).json(address)
         }catch(err){
-            console.error(`Failed to update address`, err)
+            logError(`Failed to update address`, err)
             return res.status(500).json({error: "Error updating address"})
         }
     })
@@ -107,10 +126,14 @@ export function createTeacherRouter(repository: TeachersRepository){
     router.post("/:id/address", async (req: Request, res: Response) => {
         try {
             const teacherId = parseInt(req.params.id)
+            if(!teacherId || isNaN(teacherId)){
+                logError("Invalid teacherId", new Error("Failed to add Teacher address"), req)
+                res.status(400).json({error: "Invalid teacherId"})
+            }
             await repository.addTeacherAddress(teacherId, req.body)
             return res.status(200).json({message: `Address Added`})
         }catch(err){
-            console.error("Error creating address", err)
+            logError("Error creating address", err)
             return res.status(500).json({error: "Error ceating address"})
         }
     })
@@ -119,10 +142,14 @@ export function createTeacherRouter(repository: TeachersRepository){
     router.put("/:id/address", async (req: Request, res: Response) => {
         try{
             const teacherId = parseInt(req.params.id)
+            if(!teacherId || isNaN(teacherId)){
+                logError("Invalid teacherId", new Error("Failed to update Teacher's address"), req)
+                res.status(400).json({error: "Invalid teacherId"})
+            }
             await repository.updateTeacherAddress(teacherId, req.body)
             return res.status(200).json({message: "Address Updated"})
         }catch(err){
-            console.error(`Failed to update address`, err)
+            logError(`Failed to update teacher's address`, err)
             return res.status(500).json({error: "Error update address"})
         }
     })

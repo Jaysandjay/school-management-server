@@ -1,6 +1,7 @@
 import {Router, Request, Response} from "express"
 import { ClassesRepository } from "../repositories/types/classes.base.repository"
 import { Course } from "../types/Course"
+import logError from "../util/logError"
 
 export function createClassRouter(repository: ClassesRepository){
     const router = Router()
@@ -11,7 +12,7 @@ export function createClassRouter(repository: ClassesRepository){
             const classes = await repository.getUnassignedClasses()
             return res.status(200).json(classes)
         } catch(err){
-            console.error("Error getting unassigned classes", err)
+            logError("Error getting unassigned classes", err, req)
             return res.status(500).json({error: "Error getting unassigned classes"})
         }
     })
@@ -22,7 +23,7 @@ export function createClassRouter(repository: ClassesRepository){
             const classes = await repository.getClasses()
             return res.status(200).json(classes)
         }catch(err){
-            console.error("Error fetching classes", err)
+            logError("Error fetching classes", err, req)
             return res.status(500).json({error: "Error fetching classes"})
         }
     })
@@ -31,12 +32,15 @@ export function createClassRouter(repository: ClassesRepository){
     router.get("/:id", async (req: Request, res: Response) => {
         try{
             const classId = parseInt(req.params.id)
+            if(!classId || isNaN(classId)){
+                logError("Invalid Class Id", new Error("Failed to get class"), req)
+                return res.status(400).json({error: "Invalid class Id"})
+            }
             const course = await repository.getClass(classId)
-            console.log("Classes:", course)
             return res.status(200).json(course)
             
         }catch(err){
-            console.error("Error getting class", err)
+            logError("Error getting class", err, req)
             return res.status(500).json({ error: "Error getting class" })
         }
     }) 
@@ -45,31 +49,29 @@ export function createClassRouter(repository: ClassesRepository){
     //Create Class
     router.post("/", async(req: Request, res: Response) => {
         try{
-            console.log("Create Class With:", req.body)
             let {className, gradeLevel, capacity} = req.body
+            let error = new Error("Failed to create class")
             if(!className || !gradeLevel){
+                logError("Missing class Name", error, req)
                return res.status(400).json({error: "Missing Class Name"})
             }
             gradeLevel = parseInt(gradeLevel)
-            if (isNaN(gradeLevel)) {
-                return res.status(400).json({ error: "Invalid grade type" })
-            }
+
             if (isNaN(gradeLevel) || gradeLevel < 9 ||gradeLevel > 12) {
-                console.error('Invalid grade level')
+                logError("Invalid grade", error, req)
                 return res.status(400).json({ error: "Invalid grade level" })
             }
             capacity = parseInt(capacity)
             if (isNaN(capacity) || capacity < 0 ) {
-                console.log('Invalid capacity')
+                logError("Invalid capacity", error, req)
                 return res.status(400).json({ error: "Invalid capacity" })
             }
-            console.log("Validation passed")
             const course: Course = {className, gradeLevel, capacity}
             await repository.addClass(course)
             return res.status(200).json({course})
             
         }catch(err){
-            console.error("Error creating class", err)
+            logError("Error creating class", err, req)
             return res.status(500).json({ error: "Error creating class" })
         }
     })
@@ -78,11 +80,19 @@ export function createClassRouter(repository: ClassesRepository){
     router.put("/:id", async (req: Request, res: Response) => {
         try{
             const classId = parseInt(req.params.id)
+            if(!classId || isNaN(classId)){
+                logError("Invalid Class Id", new Error("Failed to get class"), req)
+                return res.status(400).json({error: "Invalid class Id"})
+            }
             const updatedClass = req.body
+            if(!req.body){
+                logError("Missing class details", new Error("Failed to update class"), req)
+                return res.status(400).json({error: "Missing class details"})
+            }
             await repository.updateClass(classId, updatedClass)
             return res.status(200).json(updatedClass)
         }catch(err){
-            console.error("Error updating class", err)
+            logError("Error updating class", err, req)
             return res.status(500).json({error: "Error updating class"})
         }
     })
@@ -91,11 +101,15 @@ export function createClassRouter(repository: ClassesRepository){
     router.delete('/:id', async (req: Request, res: Response) => {
         try{
             const classId = parseInt(req.params.id)
+            if(!classId || isNaN(classId)){
+                logError("Invalid Class Id", new Error("Failed to delete class"), req)
+                return res.status(400).json({error: "Invalid class Id"})
+            }
             await repository.deleteClass(classId)
             return res.status(200).json({message: `Class with ID ${classId} deleted`})
             
         }catch(err){
-            console.error("Error deleting class", err)
+            logError("Error deleting class", err, req)
             return res.status(500).json({ error: "Error deleting class" })
         }
     })
@@ -105,18 +119,20 @@ export function createClassRouter(repository: ClassesRepository){
         try{
             const classId = parseInt(req.params.id)
             const teacherId = parseInt(req.body.teacherId)
-            if(!classId || !teacherId){
-                return res.status(400).json({error: "Missing fields"})
+            let error = new Error("Failed to assign teacher")
+            if(!classId || isNaN(classId)){
+                logError("Invalid Class Id", error, req)
+                return res.status(400).json({error: "Invalid class Id"})
             }
-            if (isNaN(teacherId)) {
-                return res.status(400).json({ error: "Invalid student ID" })
+            if(!teacherId || isNaN(teacherId)){
+                logError("Invalid teacher Id", error, req)
+                return res.status(400).json({error: "Invalid teacher Id"})
             }
-    
             await repository.assignTeacherToClass(classId, teacherId)
             return res.status(200).json({message: `Teacher ${teacherId} assigned to class ${classId}`})
             
         }catch(err){
-            console.error("Error assigning teacher", err)
+            logError("Error assigning teacher", err, req)
             return res.status(500).json({ error: "Error assigning teacher" })
         }
     })
@@ -125,17 +141,15 @@ export function createClassRouter(repository: ClassesRepository){
     router.delete("/:id/teacher", async (req: Request, res: Response) => {
         try {
             const classId = parseInt(req.params.id)
-
-            if (!classId || isNaN(classId)) {
-                return res.status(400).json({ error: "Invalid class ID" })
+            if(!classId || isNaN(classId)){
+                logError("Invalid Class Id", new Error("Failed to remove teacher from class "), req)
+                return res.status(400).json({error: "Invalid class Id"})
             }
-
             await repository.removeTeacherFromClass(classId)
-
             return res.status(200).json({ message: `Teacher removed from class ${classId}` })
 
         } catch (err) {
-            console.error("Error removing teacher", err)
+            logError("Error removing teacher", err, req)
             return res.status(500).json({ error: "Error removing teacher" })
         }
     })
@@ -144,10 +158,14 @@ export function createClassRouter(repository: ClassesRepository){
     router.get("/:id/teacher", async (req: Request, res: Response) => {
         try{
             const classId = parseInt(req.params.id)
+            if(!classId || isNaN(classId)){
+                logError("Invalid Class Id", new Error("Failed to get class teacher"), req)
+                return res.status(400).json({error: "Invalid class Id"})
+            }
             const teacher = await repository.getClassTeacher(classId)
             return res.status(200).json(teacher)
         } catch(err){
-            console.error("Error getting class teacher", err)
+            logError("Error getting class teacher", err, req)
             return res.status(500).json({error: "Error getting class teacher"})
         }
     })
@@ -156,11 +174,15 @@ export function createClassRouter(repository: ClassesRepository){
     router.get("/:id/students", async (req: Request, res: Response) => {
         try{
             const classId = parseInt(req.params.id)
+            if(!classId || isNaN(classId)){
+                logError("Invalid Class Id", new Error("Failed to get class"), req)
+                return res.status(400).json({error: "Invalid class Id"})
+            }
             const students = await repository.getClassStudents(classId)
             return res.status(200).json(students)
             
         }catch(err){
-            console.error("Error getting enrollments", err)
+            logError("Error getting enrollments", err, req)
             return res.status(500).json({ error: "Error getting enrollments" })
         }
     })
@@ -169,11 +191,15 @@ export function createClassRouter(repository: ClassesRepository){
     router.get("/:id/students/available", async (req: Request, res: Response) => {
         try{
             const classId = parseInt(req.params.id)
+            if(!classId || isNaN(classId)){
+                logError("Invalid Class Id", new Error("Failed to get class"), req)
+                return res.status(400).json({error: "Invalid class Id"})
+            }
             const students = await repository.getClassAvailableStudents(classId)
             return res.status(200).json(students)
             
         }catch(err){
-            console.error("Error getting available students", err)
+            logError("Error getting available students", err, req)
             return res.status(500).json({ error: "Error getting available students" })
         }
     })
@@ -182,11 +208,15 @@ export function createClassRouter(repository: ClassesRepository){
     router.get("/:id/grades", async (req : Request, res: Response)=> {
         try{
             const classId = parseInt(req.params.id)
+            if(!classId || isNaN(classId)){
+                logError("Invalid Class Id", new Error("Failed to get class"), req)
+                return res.status(400).json({error: "Invalid class Id"})
+            }
             const grades = await repository.getClassGrades(classId)
             return res.status(200).json(grades)
             
         }catch(err){
-            console.error("Error getting grades ", err)
+            logError("Error getting grades ", err, req)
             return res.status(500).json({ error: "Error getting grades" })
         }
     })

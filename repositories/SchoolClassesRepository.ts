@@ -5,6 +5,8 @@ import { Teacher } from "../types/Teacher";
 import { ClassesRepository } from "./types/classes.base.repository";
 import { Pool } from "pg";
 import dotenv from "dotenv";
+import logger from "../util/logger";
+import logError from "../util/logError";
 
 dotenv.config();
 
@@ -15,10 +17,14 @@ export class SchoolClassesRepository implements ClassesRepository {
         const client = await pool.connect()
         try{
             const res = await client.query('SELECT * FROM classes')
-            console.log(res.rows)
+            logger.debug('DB: fetch classes', {
+                rowCount: res.rows.length,
+                query: "getClasses",
+                rows:res.rows
+            })
             return res.rows
         }catch(err){
-            console.error("Error fetching classes", err)
+            logError("Error fetching classes", err)
             throw err
         }finally{
             client.release()
@@ -26,19 +32,24 @@ export class SchoolClassesRepository implements ClassesRepository {
     }
 
     async getClass(classId: number): Promise<Course> {
-       
         const client = await pool.connect()
-
         try {
             const res = await client.query('SELECT * FROM classes WHERE class_id = $1',
                 [classId]
             )
+            logger.debug('DB: fetch class', {
+                rowCount: res.rows.length,
+                query: "getClass",
+                rows:res.rows
+            })
             if(res.rowCount === 0){
-                throw new Error(`Error getting class. Class id ${classId} Does not Exist`)
+                let error = new Error("Failed to get class")
+                logError(`Class id ${classId} Does not Exist`, error)
+                throw error
             }
             return res.rows[0]
         }catch(err){
-            console.error(`Error getting class`, err)
+            logError(`Error getting class`, err)
             throw err
         }finally{
             client.release()
@@ -48,14 +59,17 @@ export class SchoolClassesRepository implements ClassesRepository {
 
     async addClass(course: Course): Promise<void> {
         const client = await pool.connect()
-        console.log(course)
-        console.log(course.className, course.gradeLevel, course.capacity)
         try{
-            const res = await client.query(`INSERT INTO classes(class_name, grade_level, capacity) VALUES($1, $2, $3)`,
+            const res = await client.query(`INSERT INTO classes(class_name, grade_level, capacity) VALUES($1, $2, $3) RETURNING *`,
                 [course.className, course.gradeLevel, course.capacity]
             )
+            logger.debug('DB: Add class', {
+                rowCount: res.rows.length,
+                query: "addClass",
+                rows:res.rows
+            })
         }catch(err){
-            console.error(`Error creating class`, err)
+            logError(`Error creating class`, err)
             throw err
         }finally{
             client.release()
@@ -74,11 +88,17 @@ export class SchoolClassesRepository implements ClassesRepository {
                     capacity=$3
                 WHERE 
                     class_id=$4
+                RETURNING *
                 `,
             [updatedClass.className, updatedClass.gradeLevel, updatedClass.capacity, classId]
             )
+            logger.debug('DB: update class', {
+                rowCount: res.rows.length,
+                query: "updateClass",
+                rows:res.rows
+            })
         }catch(err){
-            console.error("Error updating class", err)
+            logError("Error updating class", err)
             throw err
         }finally {
             client.release()
@@ -88,14 +108,21 @@ export class SchoolClassesRepository implements ClassesRepository {
     async deleteClass(classId: number): Promise<void> {
         const client = await pool.connect()
         try{
-            const res = await client.query('DELETE FROM classes WHERE class_id = $1',
+            const res = await client.query('DELETE FROM classes WHERE class_id = $1 RETURNING *',
                 [classId]
             )
+            logger.debug('DB: Delete class', {
+                rowCount: res.rows.length,
+                query: "deleteClass",
+                rows:res.rows
+            })
             if(res.rowCount === 0){
-                throw new Error(`Error deleting, class ${classId} does not exist`)
+                let error = new Error("Failed to delete class")
+                logError(`Class ${classId} does not exist`, error)
+                throw error
             }
         }catch(err){
-            console.error(`Failed to delete class with id: ${classId}`, err)
+            logError(`Failed to delete class with id: ${classId}`, err)
             throw err 
         }finally{
             client.release()
@@ -107,15 +134,21 @@ export class SchoolClassesRepository implements ClassesRepository {
         const client = await pool.connect()
        try {
             const res = await client.query(
-                'UPDATE classes SET teacher_id = $1 WHERE class_id = $2',
+                'UPDATE classes SET teacher_id = $1 WHERE class_id = $2 RETURNING *',
                 [teacherId, classId]
             )
-
+            logger.debug('DB: Update class teacher', {
+                rowCount: res.rows.length,
+                query: "assignTeacherToClass",
+                rows:res.rows
+            })
             if (res.rowCount === 0) {
-                throw new Error(`Error assigining teacher to class. Class ${classId} does not exist`)
+                let error = new Error("Failed to update class Teacher")
+                logError(`Class ${classId} does not exist`, error)
+                throw error
             }
         } catch (err) {
-            console.error(`Error assigning teacher ${teacherId} to class ${classId}`, err)
+            logError(`Error assigning teacher ${teacherId} to class ${classId}`, err)
             throw err
         } finally {
             client.release()
@@ -126,15 +159,21 @@ export class SchoolClassesRepository implements ClassesRepository {
         const client = await pool.connect()
         try {
             const res = await client.query(
-                'UPDATE classes SET teacher_id = NULL WHERE class_id = $1',
+                'UPDATE classes SET teacher_id = NULL WHERE class_id = $1 RETURNING *',
                 [classId]
             )
-
+            logger.debug('DB: Update class teacher (Remove)', {
+                rowCount: res.rows.length,
+                query: "removeTeacherFromClass",
+                rows:res.rows
+            })
             if (res.rowCount === 0) {
-                throw new Error(`Error removing teacher to class. Class ${classId} does not exist`)
+                let error = new Error("Failed to remove teacher from class")
+                logError(`Class ${classId} does not exist`, error)
+                throw error
             }
         } catch (err) {
-            console.error(`Error removing teacher from class ${classId}`, err)
+            logError(`Error removing teacher from class ${classId}`, err)
             throw err
         } finally {
             client.release()
@@ -157,7 +196,11 @@ export class SchoolClassesRepository implements ClassesRepository {
                 `,
                 [classId]
             )
-            console.log("Teacher:", res.rows)
+            logger.debug('DB: Get class teacher', {
+                rowCount: res.rows.length,
+                query: "getClassTeacher",
+                rows: res.rows
+            })
             if(res.rows.length === 0){
                 return null
             }
@@ -182,14 +225,18 @@ export class SchoolClassesRepository implements ClassesRepository {
             `,
             [classId]
         )
-
+        logger.debug('DB: Get class students', {
+                rowCount: res.rows.length,
+                query: "getClassStudents",
+                rows: res.rows
+            })
         if (res.rowCount === 0) {
             return []
         }
 
         return res.rows
         } catch (err) {
-            console.error(`Error getting students for class ${classId}`, err)
+            logError(`Error getting students for class ${classId}`, err)
             throw err
         } finally {
             client.release()
@@ -209,17 +256,28 @@ export class SchoolClassesRepository implements ClassesRepository {
             `,
             [classId]
         )
+        
         if (res.rowCount === 0) {
+            logger.debug('DB: Get classes non students', {
+                rowCount: res.rows.length,
+                query: "getClassAvailableStudents",
+                rows: res.rows
+            })
             return students.rows
         }
         const enrolledStudentIds: number[] = res.rows.map(row => row.student_id)
         const availableStudents = students.rows.filter((student) => {
                 return !enrolledStudentIds.includes(student.student_id)
             })
+        logger.debug('DB: Get classes non students', {
+                rowCount: availableStudents.length,
+                query: "getClassAvailableStudents",
+                rows: availableStudents
+            })
 
         return availableStudents
         } catch (err) {
-            console.error(`Error getting available students for class ${classId}`, err)
+            logError(`Error getting available students for class ${classId}`, err)
             throw err
         } finally {
             client.release()
@@ -228,7 +286,6 @@ export class SchoolClassesRepository implements ClassesRepository {
 
     
     async getUnassignedClasses (): Promise<Course[]> {
-        console.log("Get unassigned classes")
         const client = await pool.connect()
         try {
             const res = await client.query(
@@ -238,12 +295,18 @@ export class SchoolClassesRepository implements ClassesRepository {
                 WHERE teacher_id IS NULL
                 `
             )
+
+            logger.debug('DB: Get unassigned classes', {
+                rowCount: res.rows.length,
+                query: "getUnassignedClasses",
+                rows: res.rows
+            })
             if (res.rows.length === 0){
                 return []
             }
             return res.rows
         } catch(err) {
-            console.error("Error getting unassigned classes", err)
+            logError("Error getting unassigned classes", err)
             throw err
         } finally {
             client.release()
@@ -261,12 +324,17 @@ export class SchoolClassesRepository implements ClassesRepository {
                 `,
                 [classId]
             )
+            logger.debug('DB: Get class grades', {
+                rowCount: res.rows.length,
+                query: "getClassGrades",
+                rows: res.rows
+            })
             if (res.rows.length === 0){
                 return []
             }
             return res.rows
         }catch(err) {
-            console.error("Error getting grades", err)
+            logError("Error getting grades", err)
             throw err
         } finally {
             client.release()
